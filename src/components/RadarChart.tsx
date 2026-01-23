@@ -20,21 +20,42 @@ interface RadarChartProps {
 
 // Colors for VELNA cognitive aptitudes
 const velnaColors: Record<string, string> = {
-  'Verbal': 'hsl(280, 70%, 50%)',      // Purple
-  'Espacial': 'hsl(200, 80%, 50%)',    // Blue
-  'Lógico': 'hsl(35, 90%, 50%)',       // Orange
-  'Numérico': 'hsl(150, 70%, 40%)',    // Green
-  'Abstracto': 'hsl(340, 75%, 55%)',   // Pink/Rose
+  'Verbal': 'hsl(280, 70%, 50%)',
+  'Espacial': 'hsl(200, 80%, 50%)',
+  'Lógico': 'hsl(35, 90%, 50%)',
+  'Numérico': 'hsl(150, 70%, 40%)',
+  'Abstracto': 'hsl(340, 75%, 55%)',
 };
+
+// Generate colors for competencias dynamically
+const competenciaColors = [
+  'hsl(220, 80%, 55%)',   // Blue
+  'hsl(160, 70%, 45%)',   // Teal
+  'hsl(30, 85%, 55%)',    // Orange
+  'hsl(280, 65%, 55%)',   // Purple
+  'hsl(350, 75%, 55%)',   // Rose
+  'hsl(180, 70%, 45%)',   // Cyan
+  'hsl(45, 90%, 50%)',    // Yellow
+  'hsl(120, 60%, 45%)',   // Green
+];
 
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const isVelna = title === 'VELNA';
+  const isCompetencias = title === 'Competencias';
+
+  // Get color for a label
+  const getColor = (label: string, index: number): string => {
+    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
+    if (isCompetencias) return competenciaColors[index % competenciaColors.length];
+    return 'hsl(var(--muted-foreground))';
+  };
 
   const data = labels.map((label, index) => ({
     subject: label,
     persona: personaData[index],
     ideal: idealData[index],
+    color: getColor(label, index),
   }));
 
   // Custom dot component for vertices with circles
@@ -53,6 +74,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     );
   };
 
+  const shouldShowColorLegend = isVelna || isCompetencias;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -67,25 +90,28 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
         </div>
       </div>
 
-      {/* Color legend for VELNA */}
-      {isVelna && (
+      {/* Color legend */}
+      {shouldShowColorLegend && (
         <div className="flex flex-wrap justify-center gap-2 mb-2">
-          {labels.map((label) => (
-            <div 
-              key={label}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-              style={{ 
-                backgroundColor: `${velnaColors[label]}20`,
-                color: velnaColors[label]
-              }}
-            >
-              <span 
-                className="w-2 h-2 rounded-full" 
-                style={{ backgroundColor: velnaColors[label] }}
-              />
-              {label}
-            </div>
-          ))}
+          {labels.map((label, index) => {
+            const color = getColor(label, index);
+            return (
+              <div 
+                key={label}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
+                style={{ 
+                  backgroundColor: `${color.replace(')', ', 0.15)').replace('hsl', 'hsla')}`,
+                  color: color
+                }}
+              >
+                <span 
+                  className="w-2 h-2 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: color }}
+                />
+                <span className="truncate max-w-[80px]">{label}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       
@@ -94,19 +120,19 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
           <PolarGrid stroke="hsl(var(--border))" />
           <PolarAngleAxis 
             dataKey="subject" 
-            tick={({ x, y, payload }) => {
-              const color = isVelna ? velnaColors[payload.value] : 'hsl(var(--muted-foreground))';
+            tick={({ x, y, payload, index }) => {
+              const color = getColor(payload.value, index);
               return (
                 <text 
                   x={x} 
                   y={y} 
                   fill={color} 
                   fontSize={11}
-                  fontWeight={isVelna ? "600" : "400"}
+                  fontWeight="600"
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
-                  {payload.value}
+                  {payload.value.length > 12 ? payload.value.substring(0, 10) + '...' : payload.value}
                 </text>
               );
             }}
