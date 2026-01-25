@@ -23,49 +23,34 @@ const discLabels = [
   { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
 ];
 
-/** ✅ Textos decorativos ajustados para altura reducida */
+/** Textos decorativos ajustados a la altura compacta */
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    {/* Proactividad pegado arriba */}
-    <text x="50%" y="20" textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    {/* Arriba */}
+    <text x="50%" y="15" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Proactividad
     </text>
 
-    {/* Lado derecho */}
-    <text
-      x="95%"
-      y="50%"
-      textAnchor="end"
-      dominantBaseline="middle"
-      fontSize="11"
-      fill="hsl(var(--muted-foreground))"
-      fontWeight="bold"
-    >
+    {/* Derecha */}
+    <text x="96%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="10" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
-      <tspan x="98%" dy="1.2em">las personas</tspan>
+      <tspan x="98%" dy="1.2em">personas</tspan>
     </text>
 
-    {/* Receptividad pegado abajo */}
-    <text x="50%" y="96%" textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    {/* Abajo */}
+    <text x="50%" y="97%" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Receptividad
     </text>
 
-    {/* Lado izquierdo */}
-    <text
-      x="5%"
-      y="50%"
-      textAnchor="start"
-      dominantBaseline="middle"
-      fontSize="11"
-      fill="hsl(var(--muted-foreground))"
-      fontWeight="bold"
-    >
+    {/* Izquierda */}
+    <text x="4%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="10" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="2%" dy="-6">Tendencia a</tspan>
-      <tspan x="2%" dy="1.2em">las tareas</tspan>
+      <tspan x="2%" dy="1.2em">tareas</tspan>
     </text>
   </g>
 );
 
+/** Componente para texto con borde (Stroke) */
 const OutlinedText = ({
   x,
   y,
@@ -77,6 +62,7 @@ const OutlinedText = ({
 }: {
   x: number;
   y: number;
+  // ✅ CORRECCIÓN TS: Tipado estricto para evitar el error
   textAnchor: 'start' | 'middle' | 'end';
   fill: string;
   fontSize: number;
@@ -107,105 +93,101 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
   const data = discLabels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-    const rawDiff0 = p - i;
-    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
-    const diffColor = rawDiff >= 0 ? '#16a34a' : '#ef4444';
-
+    const rawDiff = p - i;
+    const absDiff = Math.abs(rawDiff);
+    // Evitar -0.0 visual
+    const finalDiff = absDiff < 0.1 ? 0 : rawDiff;
+    
     return {
       subject: label.key,
-      fullName: label.name,
-      description: label.desc,
+      name: label.name,
+      desc: label.desc,
       persona: p,
       ideal: i,
-      diff: rawDiff,
-      diffColor,
-      diffLabelOuter: Math.abs(rawDiff).toFixed(0),
-      diffLabelTooltip: `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`,
+      color: label.color,
+      // Lógica de color: Verde si supera/iguala, Rojo si falta
+      diffColor: finalDiff >= 0 ? '#16a34a' : '#ef4444',
+      diffLabel: Math.round(absDiff).toString(),
+      tooltipDiff: (finalDiff > 0 ? '+' : '') + finalDiff.toFixed(1)
     };
   });
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 w-full">
+      {/* Cabecera compacta */}
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-base font-semibold text-foreground">DISC</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Match:</span>
-          <span className={`text-base font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">DISC</h3>
+        <div className="flex items-center gap-2 bg-secondary/20 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] text-muted-foreground uppercase font-bold">Match</span>
+          <span className={`text-sm font-extrabold ${matchColor}`}>{match.toFixed(0)}%</span>
         </div>
       </div>
 
-      {/* ✅ ALTURA REDUCIDA: h-[340px] en móvil, h-[380px] en desktop */}
-      <div className="relative w-full h-[340px] md:h-[380px] overflow-visible">
+      {/* ✅ ALTURA CONTROLADA: Compacta (~320px) */}
+      <div className="relative w-full h-[300px] sm:h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart
             data={data}
             cx="50%"
             cy="50%"
-            outerRadius="70%" 
-            startAngle={140}
-            endAngle={-220}
-            // ✅ Márgenes mínimos para aprovechar el espacio vertical
-            margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
+            outerRadius="65%" // Radio ajustado para que quepan las etiquetas en altura reducida
+            startAngle={135} 
+            endAngle={-225}
+            margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
           >
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
-
+            
             <PolarAngleAxis
               dataKey="subject"
               tick={({ x, y, payload }) => {
-                const key = payload?.value as string;
-                const label = discLabels.find((l) => l.key === key);
-                const item = data.find((d) => d.subject === key);
-
+                const key = payload.value;
+                const item = data.find(d => d.subject === key);
+                
+                // ✅ CORRECCIÓN TS: Declarar explícitamente el tipo de la variable
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
-                let dx = 0;
+                let dx = 0; 
                 let dy = 0;
 
-                // ✅ Ajustes más apretados para la nueva altura
-                if (key === 'D') { textAnchor = 'end'; dx = -10; dy = -5; }
-                if (key === 'I') { textAnchor = 'start'; dx = 10; dy = -5; }
-                if (key === 'S') { textAnchor = 'start'; dx = 10; dy = 15; }
-                if (key === 'C') { textAnchor = 'end'; dx = -10; dy = 15; }
-
-                const nameY = dy;
-                const descY = dy + 12; // Menos espacio entre líneas
-                const numY = dy + 32;  // Número más cerca
+                // Ajuste fino de posiciones para D, I, S, C
+                if (key === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
+                if (key === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
+                if (key === 'S') { textAnchor = 'start'; dx = 15; dy = 15; }
+                if (key === 'C') { textAnchor = 'end'; dx = -15; dy = 15; }
 
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    <text
-                      x={dx}
-                      y={nameY}
-                      textAnchor={textAnchor}
-                      dominantBaseline="middle"
-                      fill={label?.color}
-                      fontSize={13} 
-                      fontWeight="800"
+                    {/* Título (D, I, S, C) */}
+                    <text 
+                      x={dx} y={dy} 
+                      textAnchor={textAnchor} 
+                      fill={item?.color} 
+                      fontSize={14} 
+                      fontWeight="900"
                     >
-                      {label?.name}
+                      {item?.name}
+                    </text>
+                    
+                    {/* Descripción pequeña */}
+                    <text 
+                      x={dx} y={dy + 12} 
+                      textAnchor={textAnchor} 
+                      fill="hsl(var(--muted-foreground))" 
+                      fontSize={9} 
+                      fontWeight="500"
+                    >
+                      {item?.desc}
                     </text>
 
-                    <text
-                      x={dx}
-                      y={descY}
-                      textAnchor={textAnchor}
-                      dominantBaseline="middle"
-                      fill="hsl(var(--muted-foreground))"
-                      fontSize={10}
-                      fontWeight="600"
-                    >
-                      {label?.desc}
-                    </text>
-
-                    {item?.diffLabelOuter != null && (
-                      <OutlinedText
-                        x={dx}
-                        y={numY}
-                        textAnchor={textAnchor}
-                        fill={item.diffColor}
-                        fontSize={16}
-                        fontWeight={900}
+                    {/* Número de diferencia */}
+                    {item && (
+                      <OutlinedText 
+                        x={dx} y={dy + 28} 
+                        textAnchor={textAnchor} 
+                        fill={item.diffColor} 
+                        fontSize={16} 
+                        fontWeight="900"
                       >
-                        {item.diffLabelOuter}
+                        {item.diffLabel}
                       </OutlinedText>
                     )}
                   </g>
@@ -214,46 +196,42 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
             />
 
             <Radar
-              name="Perfil Ideal"
+              name="Ideal"
               dataKey="ideal"
               stroke="hsl(var(--chart-ideal))"
               fill="hsl(var(--chart-ideal))"
-              fillOpacity={0.18}
-              strokeWidth={2}
-              dot={false}
+              fillOpacity={0.15}
+              strokeWidth={1.5}
             />
-
+            
             <Radar
               name={personName}
               dataKey="persona"
               stroke="hsl(var(--chart-person))"
               fill="hsl(var(--chart-person))"
-              fillOpacity={0.28}
+              fillOpacity={0.3}
               strokeWidth={2}
-              dot={false}
             />
 
             <Tooltip
               content={({ payload }) => {
                 if (!payload?.length) return null;
-                const item = payload[0].payload;
-                const color = discLabels.find((l) => l.key === item.subject)?.color;
+                const d = payload[0].payload;
                 return (
-                  <div className="bg-card border border-border rounded-lg p-2 shadow-lg text-xs">
-                    <p className="font-bold" style={{ color }}>{item.fullName}</p>
-                    <p className="text-[10px] text-muted-foreground mb-1">{item.description}</p>
-                    <div className="flex justify-between gap-4">
-                      <span>Ideal: <b className="text-primary">{item.ideal}</b></span>
-                      <span>{personName}: <b className="text-secondary">{item.persona}</b></span>
+                  <div className="bg-popover border border-border shadow-xl rounded-md p-2 text-xs">
+                    <p className="font-bold mb-1" style={{ color: d.color }}>{d.name}</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                      <span className="text-muted-foreground">Ideal:</span>
+                      <span className="font-mono font-bold text-right">{d.ideal}</span>
+                      <span className="text-muted-foreground">{personName}:</span>
+                      <span className="font-mono font-bold text-right">{d.persona}</span>
+                      <span className="text-muted-foreground">Dif:</span>
+                      <span className="font-mono font-bold text-right" style={{ color: d.diffColor }}>{d.tooltipDiff}</span>
                     </div>
-                    <p className="mt-1">
-                      Dif: <b style={{ color: item.diffColor }}>{item.diffLabelTooltip}</b>
-                    </p>
                   </div>
                 );
               }}
             />
-
             <Customized component={DecorativeLabels} />
           </RechartsRadarChart>
         </ResponsiveContainer>
