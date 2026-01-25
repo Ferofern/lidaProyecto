@@ -27,7 +27,7 @@ const discLabels = [
 /** ✅ Texto decorativo (lo mantenemos adentro para que no se corte) */
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text x="50%" y="0" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    <text x="50%" y="40" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Proactividad
     </text>
 
