@@ -1,3 +1,4 @@
+
 import {
   Radar,
   RadarChart as RechartsRadarChart,
@@ -40,29 +41,28 @@ const CustomDot = (props: any) => {
   return (
     <g>
       <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
-      <text
-        x={cx}
-        y={cy - 8}
-        textAnchor="middle"
-        fill={payload.diffColor}
-        fontSize={11}
-        fontWeight="800"
-        stroke="white"
-        strokeWidth={3}
-        paintOrder="stroke"
-      >
-        {payload.diffLabel}
-      </text>
-      <text
-        x={cx}
-        y={cy - 8}
-        textAnchor="middle"
-        fill={payload.diffColor}
-        fontSize={11}
-        fontWeight="800"
-      >
-        {payload.diffLabel}
-      </text>
+
+      {payload.diffLabel && (
+        <>
+          <text
+            x={cx}
+            y={cy - 8}
+            textAnchor="middle"
+            fill={payload.diffColor}
+            fontSize={11}
+            fontWeight="800"
+            stroke="white"
+            strokeWidth={3}
+            paintOrder="stroke"
+          >
+            {payload.diffLabel}
+          </text>
+
+          <text x={cx} y={cy - 8} textAnchor="middle" fill={payload.diffColor} fontSize={11} fontWeight="800">
+            {payload.diffLabel}
+          </text>
+        </>
+      )}
     </g>
   );
 };
@@ -83,15 +83,21 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const data = labels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-    const diff = Math.abs(p - i).toFixed(1);
-    const isSuccess = p >= i;
+
+    // Diferencia real: persona - ideal
+    const rawDiff0 = p - i;
+    // Evitar -0.0
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
+
+    const isSuccess = rawDiff >= 0;
+    const diffLabel = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
 
     return {
       subject: label,
       persona: p,
       ideal: i,
-      diffLabel: diff,
-      diffColor: isSuccess ? '#16a34a' : '#ef4444', 
+      diffLabel,
+      diffColor: isSuccess ? '#16a34a' : '#ef4444',
     };
   });
 
@@ -105,6 +111,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
       <ResponsiveContainer width="100%" height={400}>
         <RechartsRadarChart data={data}>
           <PolarGrid stroke="hsl(var(--border))" />
+
           <PolarAngleAxis
             dataKey="subject"
             tick={({ x, y, payload, index, cx, cy }) => {
@@ -113,11 +120,13 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
               const offset = 20;
+
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
+
               const words = payload.value.split(' ');
               const mid = Math.ceil(words.length / 2);
-              
+
               return (
                 <text
                   x={nx}
@@ -130,7 +139,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                 >
                   <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
                   {words.length > mid && (
-                    <tspan x={nx} dy="1.1em">{words.slice(mid).join(' ')}</tspan>
+                    <tspan x={nx} dy="1.1em">
+                      {words.slice(mid).join(' ')}
+                    </tspan>
                   )}
                 </text>
               );
@@ -157,11 +168,35 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             dot={false}
           />
 
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'hsl(var(--card))', 
-              border: '1px solid hsl(var(--border))', 
-              borderRadius: 8 
+          <Tooltip
+            content={({ payload }) => {
+              if (!payload?.length) return null;
+              const item = payload[0].payload;
+
+              return (
+                <div
+                  style={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 8,
+                    padding: 12,
+                  }}
+                >
+                  <p style={{ fontWeight: 700, marginBottom: 6 }}>{item.subject}</p>
+                  <p style={{ fontSize: 13 }}>
+                    Ideal: <b>{item.ideal}</b>
+                  </p>
+                  <p style={{ fontSize: 13 }}>
+                    {personName}: <b>{item.persona}</b>
+                  </p>
+                  <p style={{ fontSize: 13 }}>
+                    Diferencia:{' '}
+                    <b style={{ color: item.diffColor }}>
+                      {item.diffLabel}
+                    </b>
+                  </p>
+                </div>
+              );
             }}
           />
         </RechartsRadarChart>

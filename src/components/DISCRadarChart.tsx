@@ -1,3 +1,4 @@
+
 import {
   Radar,
   RadarChart as RechartsRadarChart,
@@ -24,15 +25,46 @@ const discLabels = [
 
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
-    <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
-      <tspan x="98%" dy="-6">Tendencia a</tspan>
-      <tspan x="98%" dy="1.2em">las personas</tspan>
+    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+      Proactividad
     </text>
-    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Receptividad</text>
-    <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
-      <tspan x="2%" dy="-6">Tendencia a</tspan>
-      <tspan x="2%" dy="1.2em">las tareas</tspan>
+
+    <text
+      x="95%"
+      y="50%"
+      textAnchor="end"
+      dominantBaseline="middle"
+      fontSize="12"
+      fill="hsl(var(--muted-foreground))"
+      fontWeight="bold"
+    >
+      <tspan x="98%" dy="-6">
+        Tendencia a
+      </tspan>
+      <tspan x="98%" dy="1.2em">
+        las personas
+      </tspan>
+    </text>
+
+    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+      Receptividad
+    </text>
+
+    <text
+      x="5%"
+      y="50%"
+      textAnchor="start"
+      dominantBaseline="middle"
+      fontSize="12"
+      fill="hsl(var(--muted-foreground))"
+      fontWeight="bold"
+    >
+      <tspan x="2%" dy="-6">
+        Tendencia a
+      </tspan>
+      <tspan x="2%" dy="1.2em">
+        las tareas
+      </tspan>
     </text>
   </g>
 );
@@ -44,29 +76,28 @@ const CustomDot = (props: any) => {
   return (
     <g>
       <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
-      <text
-        x={cx}
-        y={cy - 10} 
-        textAnchor="middle"
-        stroke="white"
-        strokeWidth={3}
-        paintOrder="stroke"
-        fill={payload.diffColor}
-        fontSize={12}
-        fontWeight="800"
-      >
-        {payload.diffLabel}
-      </text>
-      <text
-        x={cx}
-        y={cy - 10}
-        textAnchor="middle"
-        fill={payload.diffColor}
-        fontSize={12}
-        fontWeight="800"
-      >
-        {payload.diffLabel}
-      </text>
+
+      {/* Stroke blanco debajo para mejor legibilidad */}
+      {payload.diffLabel && (
+        <>
+          <text
+            x={cx}
+            y={cy - 10}
+            textAnchor="middle"
+            stroke="white"
+            strokeWidth={3}
+            paintOrder="stroke"
+            fill={payload.diffColor}
+            fontSize={12}
+            fontWeight="800"
+          >
+            {payload.diffLabel}
+          </text>
+          <text x={cx} y={cy - 10} textAnchor="middle" fill={payload.diffColor} fontSize={12} fontWeight="800">
+            {payload.diffLabel}
+          </text>
+        </>
+      )}
     </g>
   );
 };
@@ -78,8 +109,14 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
   const data = discLabels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-    const diff = Math.abs(p - i).toFixed(1);
-    const isSuccess = p >= i;
+
+    // Diferencia real: persona - ideal
+    const rawDiff0 = p - i;
+    // Evitar -0.0 por precisión
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
+
+    const isSuccess = rawDiff >= 0;
+    const diffLabel = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
 
     return {
       subject: label.key,
@@ -87,8 +124,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       description: label.desc,
       persona: p,
       ideal: i,
-      diffLabel: diff,
-      diffColor: isSuccess ? '#16a34a' : '#ef4444' 
+      diffLabel,
+      diffColor: isSuccess ? '#16a34a' : '#ef4444',
     };
   });
 
@@ -106,23 +143,51 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
+
             <PolarAngleAxis
               dataKey="subject"
               tick={({ x, y, payload }) => {
-                const label = discLabels.find(l => l.key === payload.value);
-                
+                const label = discLabels.find((l) => l.key === payload.value);
+
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
-                if (payload.value === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
-                if (payload.value === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
-                if (payload.value === 'S') { textAnchor = 'start'; dx = 15; dy = 20; }
-                if (payload.value === 'C') { textAnchor = 'end'; dx = -15; dy = 20; }
+
+                if (payload.value === 'D') {
+                  textAnchor = 'end';
+                  dx = -15;
+                  dy = -10;
+                }
+                if (payload.value === 'I') {
+                  textAnchor = 'start';
+                  dx = 15;
+                  dy = -10;
+                }
+                if (payload.value === 'S') {
+                  textAnchor = 'start';
+                  dx = 15;
+                  dy = 20;
+                }
+                if (payload.value === 'C') {
+                  textAnchor = 'end';
+                  dx = -15;
+                  dy = 20;
+                }
 
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">{label?.name}</text>
-                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" fontSize={11}>{label?.desc}</text>
+                    <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">
+                      {label?.name}
+                    </text>
+                    <text
+                      x={dx}
+                      y={dy + 14}
+                      textAnchor={textAnchor}
+                      fill="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                    >
+                      {label?.desc}
+                    </text>
                   </g>
                 );
               }}
@@ -152,13 +217,26 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               content={({ payload }) => {
                 if (!payload?.length) return null;
                 const item = payload[0].payload;
-                const color = discLabels.find(l => l.key === item.subject)?.color;
+                const color = discLabels.find((l) => l.key === item.subject)?.color;
+
                 return (
                   <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold" style={{ color }}>{item.fullName}</p>
+                    <p className="font-semibold" style={{ color }}>
+                      {item.fullName}
+                    </p>
                     <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                    <p className="text-sm">Ideal: <span className="font-medium text-primary">{item.ideal}</span></p>
-                    <p className="text-sm">{personName}: <span className="font-medium text-secondary">{item.persona}</span></p>
+                    <p className="text-sm">
+                      Ideal: <span className="font-medium text-primary">{item.ideal}</span>
+                    </p>
+                    <p className="text-sm">
+                      {personName}: <span className="font-medium text-secondary">{item.persona}</span>
+                    </p>
+                    <p className="text-sm">
+                      Diferencia:{' '}
+                      <span className="font-bold" style={{ color: item.diffColor }}>
+                        {item.diffLabel}
+                      </span>
+                    </p>
                   </div>
                 );
               }}
