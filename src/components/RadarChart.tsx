@@ -102,7 +102,6 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             dot={(p) => renderDot(p, 'hsl(var(--chart-person))')}
           />
           <Tooltip />
-          <Legend />
         </RechartsRadarChart>
       </ResponsiveContainer>
     </div>
