@@ -16,6 +16,14 @@ interface DataTableProps {
 }
 
 export function DataTable({ labels, personaData, idealData, personName }: DataTableProps) {
+  if (!labels || labels.length === 0) {
+    return (
+      <div className="rounded-lg border border-border p-8 text-center text-muted-foreground text-sm">
+        Esperando datos...
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <Table>
@@ -29,8 +37,8 @@ export function DataTable({ labels, personaData, idealData, personName }: DataTa
         </TableHeader>
         <TableBody>
           {labels.map((label, index) => {
-            const persona = personaData[index];
-            const ideal = idealData[index];
+            const persona = personaData[index] || 0;
+            const ideal = idealData[index] || 0;
             const diff = Math.abs(ideal - persona);
             const isGood = persona >= ideal;
 

@@ -11,10 +11,23 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const velnaLabels = ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto'];
 const discTableLabels = ['D - Dominante', 'I - Influyente', 'S - Sólido', 'C - Cumplido'];
 
+const defaultData = {
+  nombrePersona: 'Sin Datos',
+  discPersona: [0, 0, 0, 0],
+  discIdeal: [0, 0, 0, 0],
+  velnaPersona: [0, 0, 0, 0, 0],
+  velnaIdeal: [0, 0, 0, 0, 0],
+  compLabels: [],
+  compPersona: [],
+  compIdeal: []
+};
+
 export default function Index() {
   const [data, setData] = useState<ProfileData | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
+
+  const currentData = data || defaultData;
 
   const handleFileLoad = (content: string) => {
     try {
@@ -28,7 +41,6 @@ export default function Index() {
   };
 
   const handleFileDrop = (content: string) => {
-    // Extraer nombre del archivo del input
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     setFileName(input?.files?.[0]?.name || 'archivo.csv');
     handleFileLoad(content);
@@ -36,7 +48,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
@@ -52,7 +63,6 @@ export default function Index() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* File Upload Section */}
         <section className="mb-8 max-w-2xl mx-auto">
           <FileDropZone 
             onFileLoad={handleFileDrop} 
@@ -68,115 +78,105 @@ export default function Index() {
           )}
         </section>
 
-        {/* Dashboard Grid */}
-        {data && (
-          <div className="space-y-8">
-            {/* Person Info */}
-            <div className="text-center animate-slide-up">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
-                <Users className="h-4 w-4" />
-                <span className="font-medium">{data.nombrePersona}</span>
+        <div className="space-y-8">
+          <div className="flex flex-col items-center justify-center gap-4 animate-slide-up">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
+              <Users className="h-4 w-4" />
+              <span className="font-medium">{currentData.nombrePersona}</span>
+            </div>
+
+            <div className="flex items-center gap-6 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-ideal))]" />
+                <span className="text-sm font-medium text-muted-foreground">Perfil Ideal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-person))]" />
+                <span className="text-sm font-medium text-muted-foreground">{currentData.nombrePersona}</span>
               </div>
             </div>
-
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* DISC */}
-              <ChartCard delay={100}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-lg bg-disc-dominant/10 p-2">
-                    <Target className="h-5 w-5" style={{ color: 'hsl(0, 95%, 45%)' }} />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
-                </div>
-                <DISCRadarChart
-                  personaData={data.discPersona}
-                  idealData={data.discIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-
-              {/* VELNA */}
-              <ChartCard delay={200}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <Brain className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Aptitudes Cognitivas</span>
-                </div>
-                <RadarChart
-                  title="VELNA"
-                  labels={velnaLabels}
-                  personaData={data.velnaPersona}
-                  idealData={data.velnaIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-
-              {/* Competencias */}
-              <ChartCard delay={300}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="rounded-lg bg-secondary/10 p-2">
-                    <BarChart3 className="h-5 w-5 text-secondary" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Competencias Laborales</span>
-                </div>
-                <RadarChart
-                  title="Competencias"
-                  labels={data.compLabels}
-                  personaData={data.compPersona}
-                  idealData={data.compIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-            </div>
-
-            {/* Tables Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* DISC Table */}
-              <ChartCard delay={400}>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle DISC</h4>
-                <DataTable
-                  labels={discTableLabels}
-                  personaData={data.discPersona}
-                  idealData={data.discIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-
-              {/* VELNA Table */}
-              <ChartCard delay={500}>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle VELNA</h4>
-                <DataTable
-                  labels={velnaLabels}
-                  personaData={data.velnaPersona}
-                  idealData={data.velnaIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-
-              {/* Competencias Table */}
-              <ChartCard delay={600}>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle Competencias</h4>
-                <DataTable
-                  labels={data.compLabels}
-                  personaData={data.compPersona}
-                  idealData={data.compIdeal}
-                  personName={data.nombrePersona}
-                />
-              </ChartCard>
-            </div>
           </div>
-        )}
 
-        {/* Empty State */}
-        {!data && !error && (
-          <div className="text-center py-16 text-muted-foreground animate-slide-up">
-            <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Carga un archivo CSV para visualizar los datos</p>
-            <p className="text-sm mt-2">El archivo debe estar delimitado por punto y coma (;)</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <ChartCard delay={100}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-lg bg-disc-dominant/10 p-2">
+                  <Target className="h-5 w-5" style={{ color: 'hsl(0, 95%, 45%)' }} />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
+              </div>
+              <DISCRadarChart
+                personaData={currentData.discPersona}
+                idealData={currentData.discIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
+
+            <ChartCard delay={200}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Brain className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Aptitudes Cognitivas</span>
+              </div>
+              <RadarChart
+                title="VELNA"
+                labels={velnaLabels}
+                personaData={currentData.velnaPersona}
+                idealData={currentData.velnaIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
+
+            <ChartCard delay={300}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-lg bg-secondary/10 p-2">
+                  <BarChart3 className="h-5 w-5 text-secondary" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Competencias Laborales</span>
+              </div>
+              <RadarChart
+                title="Competencias"
+                labels={currentData.compLabels}
+                personaData={currentData.compPersona}
+                idealData={currentData.compIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
           </div>
-        )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <ChartCard delay={400}>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle DISC</h4>
+              <DataTable
+                labels={discTableLabels}
+                personaData={currentData.discPersona}
+                idealData={currentData.discIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
+
+            <ChartCard delay={500}>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle VELNA</h4>
+              <DataTable
+                labels={velnaLabels}
+                personaData={currentData.velnaPersona}
+                idealData={currentData.velnaIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
+
+            <ChartCard delay={600}>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle Competencias</h4>
+              <DataTable
+                labels={currentData.compLabels}
+                personaData={currentData.compPersona}
+                idealData={currentData.compIdeal}
+                personName={currentData.nombrePersona}
+              />
+            </ChartCard>
+          </div>
+        </div>
       </main>
     </div>
   );
