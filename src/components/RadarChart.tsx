@@ -33,6 +33,15 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
+const renderDot = (props: any, persona: any, ideal: any) => {
+  const { cx, cy } = props;
+  if (!cx || !cy) return null;
+  const personaNum = Number(persona) || 0;
+  const idealNum = Number(ideal) || 0;
+  const color = personaNum >= idealNum ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  return <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
+};
+
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -48,38 +57,10 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
   const data = labels.map((label, index) => ({
     subject: label,
-    persona: personaData[index],
-    ideal: idealData[index],
+    persona: Number(personaData[index]) || 0,
+    ideal: Number(idealData[index]) || 0,
     color: getColor(label, index),
   }));
-
-  const renderIdealDot = (props: any) => {
-    const { cx, cy, payload } = props;
-    if (!cx || !cy) return null;
-    const diff = payload.persona - payload.ideal;
-    const color = diff >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
-    return (
-      <>
-        <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
-        <text
-          x={cx}
-          y={cy - 10}
-          textAnchor="middle"
-          fill={color}
-          fontSize={10}
-          fontWeight="bold"
-        >
-          {diff >= 0 ? `+${diff}` : diff}
-        </text>
-      </>
-    );
-  };
-
-  const renderPersonaDot = (props: any) => {
-    const { cx, cy } = props;
-    if (!cx || !cy) return null;
-    return <circle cx={cx} cy={cy} r={5} fill="hsl(var(--chart-person))" stroke="white" strokeWidth={2} />;
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,29 +85,42 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const words = payload.value.split(' ');
               const mid = Math.ceil(words.length / 2);
               return (
-                <text x={nx} y={ny} fill={color} fontSize={9} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
+                <text
+                  x={nx}
+                  y={ny}
+                  fill={color}
+                  fontSize={9}
+                  fontWeight="700"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                >
                   <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
-                  {words.length > mid && <tspan x={nx} dy="1.2em">{words.slice(mid).join(' ')}</tspan>}
+                  {words.length > mid && (
+                    <tspan x={nx} dy="1.2em">{words.slice(mid).join(' ')}</tspan>
+                  )}
                 </text>
               );
             }}
           />
+
           <Radar
             dataKey="ideal"
             stroke="hsl(var(--chart-ideal))"
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={renderIdealDot}
+            dot={(p) => renderDot(p, p.payload.persona, p.payload.ideal)}
           />
+
           <Radar
             dataKey="persona"
             stroke="hsl(var(--chart-person))"
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={renderPersonaDot}
+            dot={(p) => null} // No pintar diferencia aquí
           />
+
           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
         </RechartsRadarChart>
       </ResponsiveContainer>
