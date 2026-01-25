@@ -1,5 +1,4 @@
 
-import React from 'react';
 import {
   Radar,
   RadarChart as RechartsRadarChart,
@@ -48,14 +47,22 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     return 'hsl(var(--muted-foreground))';
   };
 
+  // ✅ Data con diferencia
   const data = labels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
 
     const rawDiff0 = p - i;
-    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0; // evita -0.0
 
-    const diffColor = rawDiff >= 0 ? '#16a34a' : '#ef4444';
+    const isSuccess = rawDiff >= 0;
+    const diffColor = isSuccess ? '#16a34a' : '#ef4444';
+
+    // Como tu imagen: número entero sin signo alrededor
+    const diffLabelOuter = Math.abs(rawDiff).toFixed(0);
+
+    // Tooltip con signo y decimal (+20.0 / -15.0)
+    const diffLabelTooltip = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
 
     return {
       subject: label,
@@ -63,10 +70,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
       ideal: i,
       diff: rawDiff,
       diffColor,
-      // afuera: entero sin signo (como tu imagen)
-      diffLabelOuter: Math.abs(rawDiff).toFixed(0),
-      // tooltip: con signo y decimal
-      diffLabelTooltip: `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`,
+      diffLabelOuter,
+      diffLabelTooltip,
     };
   });
 
@@ -77,158 +82,141 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
         <span className={`text-lg font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
       </div>
 
-      {/* ✅ más alto para Competencias (labels largos) */}
-      <div className="w-full h-[430px] md:h-[480px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsRadarChart
-            data={data}
-            outerRadius="58%"
-            // ✅ margen extra (clave para evitar cortes)
-            margin={{ top: 55, right: 85, bottom: 55, left: 85 }}
-          >
-            <PolarGrid stroke="hsl(var(--border))" />
+      <ResponsiveContainer width="100%" height={400}>
+        <RechartsRadarChart data={data}>
+          <PolarGrid stroke="hsl(var(--border))" />
 
-            <PolarAngleAxis
-              dataKey="subject"
-              tick={({ x, y, payload, index, cx, cy }) => {
-                const safeIndex =
-                  typeof index === 'number'
-                    ? index
-                    : data.findIndex((d) => d.subject === String(payload.value));
+          {/* ✅ Etiquetas + DIFERENCIA grande alrededor (como tu imagen) */}
+          <PolarAngleAxis
+            dataKey="subject"
+            tick={({ x, y, payload, index, cx, cy }) => {
+              // index normalmente viene; si no, lo buscamos
+              const safeIndex =
+                typeof index === 'number'
+                  ? index
+                  : data.findIndex((d) => d.subject === (payload?.value as string));
 
-                const item = data[safeIndex];
-                const labelColor = getLabelColor(String(payload.value), safeIndex);
+              const item = data[safeIndex];
+              const labelColor = getLabelColor(payload.value, safeIndex);
 
-                // Vector desde el centro hacia el tick
-                const dx = x - cx;
-                const dy = y - cy;
-                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+              // Empujar el tick hacia afuera
+              const dx = x - cx;
+              const dy = y - cy;
+              const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+              const offset = 26;
 
-                // ✅ Offset dinámico:
-                // - Competencias necesita más offset por nombres largos
-                // - Velna un poco menos
-                const baseOffset = isCompetencias ? 42 : 32;
+              const nx = cx + (dx / distance) * (distance + offset);
+              const ny = cy + (dy / distance) * (distance + offset);
 
-                const nx = cx + (dx / dist) * (dist + baseOffset);
-                const ny = cy + (dy / dist) * (dist + baseOffset);
+              // Nombre en 1-2 líneas si tiene espacios
+              const words = String(payload.value).split(' ');
+              const mid = Math.ceil(words.length / 2);
 
-                // Partimos el texto en 2 líneas como ya hacías
-                const words = String(payload.value).split(' ');
-                const mid = Math.ceil(words.length / 2);
-                const lineCount = words.length > mid ? 2 : 1;
-
-                // ✅ Si el nombre es de 2 líneas, bajamos el número más
-                const numberDy = lineCount === 2 ? 30 : 22;
-
-                // Tipografía un poco más pequeña en Competencias para evitar montes
-                const labelFontSize = isCompetencias ? 9.5 : 10;
-                const numberFontSize = isCompetencias ? 14 : 16;
-
-                return (
-                  <g>
-                    {/* Nombre */}
-                    <text
-                      x={nx}
-                      y={ny}
-                      fill={labelColor}
-                      fontSize={labelFontSize}
-                      fontWeight="800"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                    >
-                      <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
-                      {words.length > mid && (
-                        <tspan x={nx} dy="1.1em">
-                          {words.slice(mid).join(' ')}
-                        </tspan>
-                      )}
-                    </text>
-
-                    {/* Número */}
-                    {item?.diffLabelOuter != null && (
-                      <>
-                        <text
-                          x={nx}
-                          y={ny + numberDy}
-                          fill={item.diffColor}
-                          fontSize={numberFontSize}
-                          fontWeight="900"
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          stroke="white"
-                          strokeWidth={3}
-                          paintOrder="stroke"
-                        >
-                          {item.diffLabelOuter}
-                        </text>
-                        <text
-                          x={nx}
-                          y={ny + numberDy}
-                          fill={item.diffColor}
-                          fontSize={numberFontSize}
-                          fontWeight="900"
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                        >
-                          {item.diffLabelOuter}
-                        </text>
-                      </>
+              return (
+                <g>
+                  {/* Nombre */}
+                  <text
+                    x={nx}
+                    y={ny}
+                    fill={labelColor}
+                    fontSize={10}
+                    fontWeight="700"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
+                    {words.length > mid && (
+                      <tspan x={nx} dy="1.1em">
+                        {words.slice(mid).join(' ')}
+                      </tspan>
                     )}
-                  </g>
-                );
-              }}
-            />
+                  </text>
 
-            <Radar
-              name="Ideal"
-              dataKey="ideal"
-              stroke="hsl(var(--chart-ideal))"
-              fill="hsl(var(--chart-ideal))"
-              fillOpacity={0.14}
-              strokeWidth={2}
-              dot={false}
-            />
+                  {/* Número grande (diferencia) */}
+                  {item?.diffLabelOuter != null && (
+                    <>
+                      <text
+                        x={nx}
+                        y={ny + 22}
+                        fill={item.diffColor}
+                        fontSize={16}
+                        fontWeight="800"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        stroke="white"
+                        strokeWidth={3}
+                        paintOrder="stroke"
+                      >
+                        {item.diffLabelOuter}
+                      </text>
 
-            <Radar
-              name={personName}
-              dataKey="persona"
-              stroke="hsl(var(--chart-person))"
-              fill="hsl(var(--chart-person))"
-              fillOpacity={0.26}
-              strokeWidth={2}
-              dot={false}
-            />
+                      <text
+                        x={nx}
+                        y={ny + 22}
+                        fill={item.diffColor}
+                        fontSize={16}
+                        fontWeight="800"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        {item.diffLabelOuter}
+                      </text>
+                    </>
+                  )}
+                </g>
+              );
+            }}
+          />
 
-            <Tooltip
-              content={({ payload }) => {
-                if (!payload?.length) return null;
-                const item = payload[0].payload;
+          <Radar
+            name="Ideal"
+            dataKey="ideal"
+            stroke="hsl(var(--chart-ideal))"
+            fill="hsl(var(--chart-ideal))"
+            fillOpacity={0.15}
+            strokeWidth={2}
+            dot={false}
+          />
 
-                return (
-                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold text-foreground mb-1">{item.subject}</p>
+          <Radar
+            name={personName}
+            dataKey="persona"
+            stroke="hsl(var(--chart-person))"
+            fill="hsl(var(--chart-person))"
+            fillOpacity={0.25}
+            strokeWidth={2}
+            dot={false}
+          />
 
-                    <p className="text-sm">
-                      Ideal: <span className="font-semibold">{item.ideal}</span>
-                    </p>
-                    <p className="text-sm">
-                      {personName}: <span className="font-semibold">{item.persona}</span>
-                    </p>
+          {/* ✅ Tooltip con Diferencia */}
+          <Tooltip
+            content={({ payload }) => {
+              if (!payload?.length) return null;
+              const item = payload[0].payload;
 
-                    <p className="text-sm">
-                      Diferencia:{' '}
-                      <span className="font-bold" style={{ color: item.diffColor }}>
-                        {item.diffLabelTooltip}
-                      </span>
-                    </p>
-                  </div>
-                );
-              }}
-            />
-          </RechartsRadarChart>
-        </ResponsiveContainer>
-      </div>
+              return (
+                <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                  <p className="font-semibold text-foreground mb-1">{item.subject}</p>
+
+                  <p className="text-sm">
+                    Ideal: <span className="font-semibold">{item.ideal}</span>
+                  </p>
+                  <p className="text-sm">
+                    {personName}: <span className="font-semibold">{item.persona}</span>
+                  </p>
+
+                  <p className="text-sm">
+                    Diferencia:{' '}
+                    <span className="font-bold" style={{ color: item.diffColor }}>
+                      {item.diffLabelTooltip}
+                    </span>
+                  </p>
+                </div>
+              );
+            }}
+          />
+        </RechartsRadarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
-``
