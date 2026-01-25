@@ -35,7 +35,7 @@ const competenciaColors = [
 
 const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   const { cx, cy } = props;
-  if (!cx || !cy) return null;
+  if (cx === undefined || cy === undefined) return null;
 
   const diff = Math.abs(ideal - persona);
   const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
@@ -73,8 +73,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
   const data = labels.map((label, index) => ({
     subject: label,
-    persona: personaData[index],
-    ideal: idealData[index],
+    persona: personaData[index] ?? 0,
+    ideal: idealData[index] ?? 0,
     color: getColor(label, index),
   }));
 
@@ -137,7 +137,13 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             dot={() => null}
           />
 
-          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: 8,
+            }}
+          />
         </RechartsRadarChart>
       </ResponsiveContainer>
     </div>

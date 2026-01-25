@@ -70,8 +70,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     subject: label.key,
     fullName: label.name,
     description: label.desc,
-    persona: personaData[index],
-    ideal: idealData[index],
+    persona: personaData[index] ?? 0,
+    ideal: idealData[index] ?? 0,
   }));
 
   return (
