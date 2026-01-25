@@ -33,45 +33,6 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-// Componente Dot personalizado que calcula la diferencia en el momento de renderizar
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-
-  // Validación: si faltan datos clave, no renderizar
-  if (!cx || !cy || !payload) return null;
-
-  // Extraer valores asegurando que sean números, defaulting a 0
-  const persona = Number(payload.persona || 0);
-  const ideal = Number(payload.ideal || 0);
-
-  // Calcular la diferencia
-  const diff = Math.abs(persona - ideal).toFixed(1);
-
-  // Determinar el color: Verde si Persona >= Ideal, Rojo si no.
-  // Usamos HEX para garantizar el color exacto.
-  const isSuccess = persona >= ideal;
-  const color = isSuccess ? '#22c55e' : '#ef4444'; // green-500 vs red-500
-
-  return (
-    <g>
-      {/* Círculo con fondo blanco para que el texto sea legible */}
-      <circle cx={cx} cy={cy} r={8} fill="white" stroke={color} strokeWidth={2} />
-      {/* Texto centrado */}
-      <text
-        x={cx}
-        y={cy}
-        dy={3} // Ajuste vertical fino
-        textAnchor="middle"
-        fill={color}
-        fontSize={10}
-        fontWeight="900"
-      >
-        {diff}
-      </text>
-    </g>
-  );
-};
-
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -79,14 +40,12 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
-  // Función original para obtener el color de la etiqueta
   const getColor = (label: string, index: number) => {
     if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
     if (isCompetencias) return competenciaColors[index % competenciaColors.length];
     return 'hsl(var(--muted-foreground))';
   };
 
-  // Construcción de datos asegurando que no haya nulos/NaN
   const data = labels.map((label, index) => ({
     subject: label,
     persona: Number(personaData?.[index] ?? 0),
@@ -105,13 +64,12 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
           <PolarGrid stroke="hsl(var(--border))" />
           <PolarAngleAxis
             dataKey="subject"
-            // Lógica original para colorear y posicionar las etiquetas
             tick={({ x, y, payload, index, cx, cy }) => {
               const color = getColor(payload.value, index);
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 30; // Un poco más de espacio para que no se monte sobre el dot
+              const offset = 30;
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
               const words = payload.value.split(' ');
@@ -135,7 +93,6 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             }}
           />
 
-          {/* Radar Ideal: Lleva los Dots personalizados */}
           <Radar
             name="Ideal"
             dataKey="ideal"
@@ -143,10 +100,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={<CustomDot />}
+            dot={true}
           />
 
-          {/* Radar Persona: Sin dots */}
           <Radar
             name={personName}
             dataKey="persona"

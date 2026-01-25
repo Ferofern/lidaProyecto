@@ -37,36 +37,6 @@ const DecorativeLabels = () => (
   </g>
 );
 
-// El mismo componente CustomDot robusto
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  if (!cx || !cy || !payload) return null;
-
-  const persona = Number(payload.persona || 0);
-  const ideal = Number(payload.ideal || 0);
-  const diff = Math.abs(persona - ideal).toFixed(1);
-
-  const isSuccess = persona >= ideal;
-  const color = isSuccess ? '#22c55e' : '#ef4444';
-
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={8} fill="white" stroke={color} strokeWidth={2} />
-      <text
-        x={cx}
-        y={cy}
-        dy={3}
-        textAnchor="middle"
-        fill={color}
-        fontSize={10}
-        fontWeight="900"
-      >
-        {diff}
-      </text>
-    </g>
-  );
-};
-
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -95,7 +65,6 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
             <PolarAngleAxis
               dataKey="subject"
-              // Lógica original para las etiquetas D, I, S, C con sus colores
               tick={({ x, y, payload }) => {
                 const label = discLabels.find(l => l.key === payload.value);
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
@@ -115,7 +84,6 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               }}
             />
 
-            {/* Radar Ideal con el CustomDot */}
             <Radar
               name="Perfil Ideal"
               dataKey="ideal"
@@ -123,7 +91,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={<CustomDot />}
+              dot={true}
             />
 
             <Radar
