@@ -16,14 +16,14 @@ interface DISCRadarChartProps {
 }
 
 const discLabels = [
-  { key: 'D', name: 'Dominante', color: 'hsl(0, 95%, 45%)', desc: 'Directo, firme' },
-  { key: 'I', name: 'Influyente', color: 'hsl(35, 95%, 55%)', desc: 'Extrovertido, negociador' },
-  { key: 'S', name: 'Sólido', color: 'hsl(85, 70%, 45%)', desc: 'Sereno, paciente' },
-  { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
+  { key: 'D', name: 'Dominante', color: '#ef4444', desc: 'Directo, firme' },
+  { key: 'I', name: 'Influyente', color: '#eab308', desc: 'Extrovertido, negociador' },
+  { key: 'S', name: 'Sólido', color: '#84cc16', desc: 'Sereno, paciente' },
+  { key: 'C', name: 'Cumplido', color: '#3b82f6', desc: 'Analítico, prudente' },
 ];
 
 const DecorativeLabels = () => (
-  <g>
+  <g pointerEvents="none">
     <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
     <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
@@ -37,17 +37,48 @@ const DecorativeLabels = () => (
   </g>
 );
 
+const CustomDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!cx || !cy || !payload) return null;
+
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={8} fill="white" stroke={payload.dotColor} strokeWidth={2} />
+      <text
+        x={cx}
+        y={cy}
+        dy={3}
+        textAnchor="middle"
+        fill={payload.dotColor}
+        fontSize={10}
+        fontWeight="900"
+      >
+        {payload.diffLabel}
+      </text>
+    </g>
+  );
+};
+
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
 
-  const data = discLabels.map((label, index) => ({
-    subject: label.key,
-    fullName: label.name,
-    description: label.desc,
-    persona: Number(personaData?.[index] ?? 0),
-    ideal: Number(idealData?.[index] ?? 0),
-  }));
+  const data = discLabels.map((label, index) => {
+    const p = Number(personaData?.[index] ?? 0);
+    const i = Number(idealData?.[index] ?? 0);
+    const diff = Math.abs(p - i).toFixed(1);
+    const isSuccess = p >= i;
+    
+    return {
+      subject: label.key,
+      fullName: label.name,
+      description: label.desc,
+      persona: p,
+      ideal: i,
+      diffLabel: diff,
+      dotColor: isSuccess ? '#16a34a' : '#dc2626'
+    };
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,7 +122,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={true}
+              dot={<CustomDot />}
             />
 
             <Radar
