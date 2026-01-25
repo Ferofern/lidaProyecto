@@ -1,4 +1,5 @@
 
+import React from 'react';
 import {
   Radar,
   RadarChart as RechartsRadarChart,
@@ -25,12 +26,19 @@ const discLabels = [
 
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    <text
+      x="50%"
+      y="22"
+      textAnchor="middle"
+      fontSize="12"
+      fill="hsl(var(--muted-foreground))"
+      fontWeight="bold"
+    >
       Proactividad
     </text>
 
     <text
-      x="95%"
+      x="92%"
       y="50%"
       textAnchor="end"
       dominantBaseline="middle"
@@ -38,20 +46,27 @@ const DecorativeLabels = () => (
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="98%" dy="-6">
+      <tspan x="95%" dy="-6">
         Tendencia a
       </tspan>
-      <tspan x="98%" dy="1.2em">
+      <tspan x="95%" dy="1.2em">
         las personas
       </tspan>
     </text>
 
-    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    <text
+      x="50%"
+      y="97%"
+      textAnchor="middle"
+      fontSize="12"
+      fill="hsl(var(--muted-foreground))"
+      fontWeight="bold"
+    >
       Receptividad
     </text>
 
     <text
-      x="5%"
+      x="6%"
       y="50%"
       textAnchor="start"
       dominantBaseline="middle"
@@ -59,14 +74,49 @@ const DecorativeLabels = () => (
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="2%" dy="-6">
+      <tspan x="5%" dy="-6">
         Tendencia a
       </tspan>
-      <tspan x="2%" dy="1.2em">
+      <tspan x="5%" dy="1.2em">
         las tareas
       </tspan>
     </text>
   </g>
+);
+
+// ✅ helper: texto con contorno sin duplicarlo
+const OutlinedText = ({
+  x,
+  y,
+  textAnchor,
+  fill,
+  fontSize,
+  fontWeight,
+  children,
+}: {
+  x: number;
+  y: number;
+  textAnchor: 'start' | 'middle' | 'end';
+  fill: string;
+  fontSize: number;
+  fontWeight: number | string;
+  children: React.ReactNode;
+}) => (
+  <text
+    x={x}
+    y={y}
+    textAnchor={textAnchor}
+    dominantBaseline="middle"
+    fill={fill}
+    fontSize={fontSize}
+    fontWeight={fontWeight}
+    stroke="white"
+    strokeWidth={3}
+    paintOrder="stroke fill"
+    strokeLinejoin="round"
+  >
+    {children}
+  </text>
 );
 
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
@@ -77,18 +127,10 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
 
-    // Diferencia real (persona - ideal)
     const rawDiff0 = p - i;
     const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0; // evita -0.0
 
-    const isSuccess = rawDiff >= 0;
-    const diffColor = isSuccess ? '#16a34a' : '#ef4444';
-
-    // Para el borde (como tu imagen): entero sin signo, pero coloreado
-    const diffLabelOuter = Math.abs(rawDiff).toFixed(0);
-
-    // Para tooltip: con signo y decimal
-    const diffLabelTooltip = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
+    const diffColor = rawDiff >= 0 ? '#16a34a' : '#ef4444';
 
     return {
       subject: label.key,
@@ -98,8 +140,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       ideal: i,
       diff: rawDiff,
       diffColor,
-      diffLabelOuter,
-      diffLabelTooltip,
+      diffLabelOuter: Math.abs(rawDiff).toFixed(0), // afuera: entero
+      diffLabelTooltip: `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`, // tooltip: +20.0
     };
   });
 
@@ -113,86 +155,77 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
         </div>
       </div>
 
-      <div className="relative w-full h-[350px]">
+      <div className="relative w-full h-[420px] md:h-[460px] overflow-visible">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
+          <RechartsRadarChart
+            data={data}
+            cx="50%"
+            cy="50%"
+            outerRadius="60%"
+            startAngle={140}
+            endAngle={-220}
+            margin={{ top: 48, right: 110, bottom: 48, left: 110 }}
+          >
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
 
-            {/* ✅ Tick custom: nombre + desc + DIFERENCIA alrededor */}
             <PolarAngleAxis
               dataKey="subject"
-              tick={({ x, y, payload, cx, cy }) => {
+              tick={({ x, y, payload }) => {
                 const key = payload?.value as string;
                 const label = discLabels.find((l) => l.key === key);
                 const item = data.find((d) => d.subject === key);
 
-                // Posición/alineación como tu versión original
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
 
-                if (key === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
-                if (key === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
-                if (key === 'S') { textAnchor = 'start'; dx = 15; dy = 20; }
-                if (key === 'C') { textAnchor = 'end'; dx = -15; dy = 20; }
+                if (key === 'D') { textAnchor = 'end'; dx = -22; dy = -14; }
+                if (key === 'I') { textAnchor = 'start'; dx = 22; dy = -14; }
+                if (key === 'S') { textAnchor = 'start'; dx = 22; dy = 26; }
+                if (key === 'C') { textAnchor = 'end'; dx = -22; dy = 26; }
 
-                const baseX = dx;
-                const baseY = dy;
+                const nameY = dy;
+                const descY = dy + 14;
+                const numY = dy + 40;
 
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    {/* Nombre */}
                     <text
-                      x={baseX}
-                      y={baseY}
+                      x={dx}
+                      y={nameY}
                       textAnchor={textAnchor}
+                      dominantBaseline="middle"
                       fill={label?.color}
-                      fontSize={16}
-                      fontWeight="bold"
+                      fontSize={15}
+                      fontWeight="800"
                     >
                       {label?.name}
                     </text>
 
-                    {/* Descripción */}
                     <text
-                      x={baseX}
-                      y={baseY + 14}
+                      x={dx}
+                      y={descY}
                       textAnchor={textAnchor}
+                      dominantBaseline="middle"
                       fill="hsl(var(--muted-foreground))"
-                      fontSize={11}
+                      fontSize={10}
+                      fontWeight="600"
                     >
                       {label?.desc}
                     </text>
 
-                    {/* ✅ Número grande (diferencia) */}
+                    {/* ✅ número con contorno sin duplicado */}
                     {item?.diffLabelOuter != null && (
-                      <>
-                        {/* Stroke blanco (debajo) */}
-                        <text
-                          x={baseX}
-                          y={baseY + 36}
-                          textAnchor={textAnchor}
-                          fill={item.diffColor}
-                          fontSize={10}
-                          fontWeight="900"
-                          stroke="white"
-                          strokeWidth={3}
-                          paintOrder="stroke"
-                        >
-                          {item.diffLabelOuter}
-                        </text>
-                        {/* Texto nítido arriba */}
-                        <text
-                          x={baseX}
-                          y={baseY + 36}
-                          textAnchor={textAnchor}
-                          fill={item.diffColor}
-                          fontSize={18}
-                          fontWeight="900"
-                        >
-                          {item.diffLabelOuter}
-                        </text>
-                      </>
+                      <OutlinedText
+                        x={dx}
+                        y={numY}
+                        textAnchor={textAnchor}
+                        fill={item.diffColor}
+                        fontSize={18}
+                        fontWeight={900}
+                      >
+                        {item.diffLabelOuter}
+                      </OutlinedText>
                     )}
                   </g>
                 );
@@ -204,7 +237,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               dataKey="ideal"
               stroke="hsl(var(--chart-ideal))"
               fill="hsl(var(--chart-ideal))"
-              fillOpacity={0.2}
+              fillOpacity={0.18}
               strokeWidth={2}
               dot={false}
             />
@@ -214,12 +247,11 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               dataKey="persona"
               stroke="hsl(var(--chart-person))"
               fill="hsl(var(--chart-person))"
-              fillOpacity={0.3}
+              fillOpacity={0.28}
               strokeWidth={2}
               dot={false}
             />
 
-            {/* ✅ Tooltip completo */}
             <Tooltip
               content={({ payload }) => {
                 if (!payload?.length) return null;
