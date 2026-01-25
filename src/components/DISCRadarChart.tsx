@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Radar,
@@ -24,54 +23,49 @@ const discLabels = [
   { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
 ];
 
-/** ✅ Texto decorativo (lo mantenemos adentro para que no se corte) */
+/** ✅ Textos decorativos ajustados para altura reducida */
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text x="50%" y="280" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    {/* Proactividad pegado arriba */}
+    <text x="50%" y="20" textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Proactividad
     </text>
 
+    {/* Lado derecho */}
     <text
-      x="90%"
+      x="95%"
       y="50%"
       textAnchor="end"
       dominantBaseline="middle"
-      fontSize="12"
+      fontSize="11"
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="93%" dy="-6">
-        Tendencia a
-      </tspan>
-      <tspan x="93%" dy="1.2em">
-        las personas
-      </tspan>
+      <tspan x="98%" dy="-6">Tendencia a</tspan>
+      <tspan x="98%" dy="1.2em">las personas</tspan>
     </text>
 
-    <text x="50%" y="57%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    {/* Receptividad pegado abajo */}
+    <text x="50%" y="96%" textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Receptividad
     </text>
 
+    {/* Lado izquierdo */}
     <text
-      x="10%"
+      x="5%"
       y="50%"
       textAnchor="start"
       dominantBaseline="middle"
-      fontSize="12"
+      fontSize="11"
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="7%" dy="-6">
-        Tendencia a
-      </tspan>
-      <tspan x="7%" dy="1.2em">
-        las tareas
-      </tspan>
+      <tspan x="2%" dy="-6">Tendencia a</tspan>
+      <tspan x="2%" dy="1.2em">las tareas</tspan>
     </text>
   </g>
 );
 
-/** ✅ Texto con contorno (SIN duplicar, se ve premium) */
 const OutlinedText = ({
   x,
   y,
@@ -113,10 +107,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
   const data = discLabels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-
     const rawDiff0 = p - i;
-    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0; // evita -0.0
-
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
     const diffColor = rawDiff >= 0 ? '#16a34a' : '#ef4444';
 
     return {
@@ -133,28 +125,27 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">DISC</h3>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-base font-semibold text-foreground">DISC</h3>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Match:</span>
-          <span className={`text-lg font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
+          <span className="text-xs text-muted-foreground">Match:</span>
+          <span className={`text-base font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
         </div>
       </div>
 
-      {/* ✅ Más alto + radar más grande */}
-      <div className="relative w-full h-[520px] md:h-[560px] overflow-visible">
+      {/* ✅ ALTURA REDUCIDA: h-[340px] en móvil, h-[380px] en desktop */}
+      <div className="relative w-full h-[340px] md:h-[380px] overflow-visible">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart
             data={data}
             cx="50%"
             cy="50%"
-            // ✅ más grande que antes
-            outerRadius="72%"
+            outerRadius="70%" 
             startAngle={140}
             endAngle={-220}
-            // ✅ menos margen para que el radar ocupe más
-            margin={{ top: 36, right: 70, bottom: 36, left: 70 }}
+            // ✅ Márgenes mínimos para aprovechar el espacio vertical
+            margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
           >
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
 
@@ -165,19 +156,19 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 const label = discLabels.find((l) => l.key === key);
                 const item = data.find((d) => d.subject === key);
 
-                // ✅ Más cerca para que no empuje tanto a los bordes (pero sin montarse)
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
 
-                if (key === 'D') { textAnchor = 'end'; dx = -14; dy = -12; }
-                if (key === 'I') { textAnchor = 'start'; dx = 14; dy = -12; }
-                if (key === 'S') { textAnchor = 'start'; dx = 14; dy = 24; }
-                if (key === 'C') { textAnchor = 'end'; dx = -14; dy = 24; }
+                // ✅ Ajustes más apretados para la nueva altura
+                if (key === 'D') { textAnchor = 'end'; dx = -10; dy = -5; }
+                if (key === 'I') { textAnchor = 'start'; dx = 10; dy = -5; }
+                if (key === 'S') { textAnchor = 'start'; dx = 10; dy = 15; }
+                if (key === 'C') { textAnchor = 'end'; dx = -10; dy = 15; }
 
                 const nameY = dy;
-                const descY = dy + 14;
-                const numY = dy + 40;
+                const descY = dy + 12; // Menos espacio entre líneas
+                const numY = dy + 32;  // Número más cerca
 
                 return (
                   <g transform={`translate(${x},${y})`}>
@@ -187,7 +178,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                       textAnchor={textAnchor}
                       dominantBaseline="middle"
                       fill={label?.color}
-                      fontSize={14}   // un pelín menor para estética
+                      fontSize={13} 
                       fontWeight="800"
                     >
                       {label?.name}
@@ -211,7 +202,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                         y={numY}
                         textAnchor={textAnchor}
                         fill={item.diffColor}
-                        fontSize={18}
+                        fontSize={16}
                         fontWeight={900}
                       >
                         {item.diffLabelOuter}
@@ -247,26 +238,16 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 if (!payload?.length) return null;
                 const item = payload[0].payload;
                 const color = discLabels.find((l) => l.key === item.subject)?.color;
-
                 return (
-                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold" style={{ color }}>
-                      {item.fullName}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-
-                    <p className="text-sm">
-                      Ideal: <span className="font-medium text-primary">{item.ideal}</span>
-                    </p>
-                    <p className="text-sm">
-                      {personName}: <span className="font-medium text-secondary">{item.persona}</span>
-                    </p>
-
-                    <p className="text-sm">
-                      Diferencia:{' '}
-                      <span className="font-bold" style={{ color: item.diffColor }}>
-                        {item.diffLabelTooltip}
-                      </span>
+                  <div className="bg-card border border-border rounded-lg p-2 shadow-lg text-xs">
+                    <p className="font-bold" style={{ color }}>{item.fullName}</p>
+                    <p className="text-[10px] text-muted-foreground mb-1">{item.description}</p>
+                    <div className="flex justify-between gap-4">
+                      <span>Ideal: <b className="text-primary">{item.ideal}</b></span>
+                      <span>{personName}: <b className="text-secondary">{item.persona}</b></span>
+                    </div>
+                    <p className="mt-1">
+                      Dif: <b style={{ color: item.diffColor }}>{item.diffLabelTooltip}</b>
                     </p>
                   </div>
                 );

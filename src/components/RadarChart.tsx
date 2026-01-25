@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Radar,
@@ -35,7 +34,6 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-/** ✅ Texto con contorno SIN duplicar */
 const OutlinedText = ({
   x,
   y,
@@ -68,10 +66,6 @@ const OutlinedText = ({
   </text>
 );
 
-/**
- * ✅ Split inteligente en hasta "maxLines" líneas,
- * respetando un máximo de caracteres aproximado por línea.
- */
 function splitToLines(label: string, maxCharsPerLine: number, maxLines: number) {
   const words = label.split(' ').filter(Boolean);
   const lines: string[] = [];
@@ -84,24 +78,19 @@ function splitToLines(label: string, maxCharsPerLine: number, maxLines: number) 
     } else {
       if (current) lines.push(current);
       current = w;
-      if (lines.length === maxLines - 1) break; // dejamos espacio para última línea
+      if (lines.length === maxLines - 1) break;
     }
   }
-
-  // Empujamos lo que queda
   const remainingWords = words.slice(lines.join(' ').split(' ').filter(Boolean).length);
   if (lines.length < maxLines) {
     const last = [current, ...remainingWords].filter(Boolean).join(' ');
     if (last) lines.push(last);
   }
-
-  // Si aún se pasó, recortamos con “…” en la última
   if (lines.length > maxLines) lines.length = maxLines;
   const lastIdx = lines.length - 1;
   if (lines[lastIdx]?.length > maxCharsPerLine) {
     lines[lastIdx] = lines[lastIdx].slice(0, Math.max(0, maxCharsPerLine - 1)).trimEnd() + '…';
   }
-
   return lines;
 }
 
@@ -121,10 +110,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const data = labels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-
     const rawDiff0 = p - i;
     const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
-
     const diffColor = rawDiff >= 0 ? '#16a34a' : '#ef4444';
 
     return {
@@ -138,19 +125,17 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     };
   });
 
-  // ✅ Config visual por tipo
-  const outerRadius = isCompetencias ? '70%' : '74%'; // más grande
-  const chartHeight = isCompetencias ? 'h-[560px] md:h-[620px]' : 'h-[540px] md:h-[600px]';
+  // ✅ ALTURA REDUCIDA: aprox 400px en lugar de 600px
+  const chartHeight = isCompetencias ? 'h-[400px] md:h-[440px]' : 'h-[360px] md:h-[400px]';
+  const outerRadius = isCompetencias ? '68%' : '72%';
 
-  // Margen más razonable (menos blanco, radar más grande)
-  const margin = isCompetencias
-    ? { top: 42, right: 70, bottom: 42, left: 70 }
-    : { top: 36, right: 60, bottom: 36, left: 60 };
+  // ✅ Márgenes mínimos
+  const margin = { top: 20, right: 40, bottom: 20, left: 40 };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{title}</h3>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-base font-semibold">{title}</h3>
         <span className={`text-lg font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
       </div>
 
@@ -162,11 +147,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             <PolarAngleAxis
               dataKey="subject"
               tick={({ x, y, payload, index, cx, cy }) => {
-                const safeIndex =
-                  typeof index === 'number'
-                    ? index
-                    : data.findIndex((d) => d.subject === String(payload.value));
-
+                const safeIndex = typeof index === 'number' ? index : data.findIndex((d) => d.subject === String(payload.value));
                 const item = data[safeIndex];
                 const labelText = String(payload.value);
                 const labelColor = getLabelColor(labelText, safeIndex);
@@ -175,23 +156,21 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                 const dy = y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                // ✅ Empujar hacia afuera, pero no tanto como antes
-                const baseOffset = isCompetencias ? 36 : 28;
-
+                // ✅ Etiquetas más pegadas al gráfico (offset reducido)
+                const baseOffset = isCompetencias ? 22 : 18;
+                
                 const nx = cx + (dx / dist) * (dist + baseOffset);
                 const ny = cy + (dy / dist) * (dist + baseOffset);
 
-                // ✅ 3 líneas en Competencias, 2 en VELNA
                 const maxLines = isCompetencias ? 3 : 2;
                 const maxChars = isCompetencias ? 14 : 16;
                 const lines = splitToLines(labelText, maxChars, maxLines);
 
-                // Tamaños ajustados para que el radar gane espacio
-                const labelFontSize = isCompetencias ? 9.3 : 10.2;
-                const numberFontSize = isCompetencias ? 14 : 16;
+                const labelFontSize = isCompetencias ? 9 : 10;
+                const numberFontSize = isCompetencias ? 13 : 15;
 
-                // ✅ separar el número según cantidad de líneas
-                const numberDy = 20 + (lines.length - 1) * 12;
+                // Texto del número pegadito a la etiqueta
+                const numberDy = 16 + (lines.length - 1) * 10;
 
                 return (
                   <g>
@@ -205,7 +184,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                       dominantBaseline="middle"
                     >
                       {lines.map((ln, i) => (
-                        <tspan key={i} x={nx} dy={i === 0 ? 0 : '1.15em'}>
+                        <tspan key={i} x={nx} dy={i === 0 ? 0 : '1.1em'}>
                           {ln}
                         </tspan>
                       ))}
@@ -245,23 +224,15 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               content={({ payload }) => {
                 if (!payload?.length) return null;
                 const item = payload[0].payload;
-
                 return (
-                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold text-foreground mb-1">{item.subject}</p>
-
-                    <p className="text-sm">
-                      Ideal: <span className="font-semibold">{item.ideal}</span>
-                    </p>
-                    <p className="text-sm">
-                      {personName}: <span className="font-semibold">{item.persona}</span>
-                    </p>
-
-                    <p className="text-sm">
-                      Diferencia:{' '}
-                      <span className="font-bold" style={{ color: item.diffColor }}>
-                        {item.diffLabelTooltip}
-                      </span>
+                  <div className="bg-card border border-border rounded-lg p-2 shadow-lg text-xs">
+                    <p className="font-semibold mb-1" style={{ color: item.diffColor }}>{item.subject}</p>
+                    <div className="flex gap-3 justify-between">
+                      <span>Ideal: <b>{item.ideal}</b></span>
+                      <span>{personName}: <b>{item.persona}</b></span>
+                    </div>
+                    <p className="mt-1">
+                      Dif: <b style={{ color: item.diffColor }}>{item.diffLabelTooltip}</b>
                     </p>
                   </div>
                 );
