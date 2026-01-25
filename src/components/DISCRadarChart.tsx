@@ -69,39 +69,6 @@ const DecorativeLabels = () => (
   </g>
 );
 
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  if (!cx || !cy || !payload) return null;
-
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
-
-      {/* Stroke blanco debajo para mejor legibilidad */}
-      {payload.diffLabel && (
-        <>
-          <text
-            x={cx}
-            y={cy - 10}
-            textAnchor="middle"
-            stroke="white"
-            strokeWidth={3}
-            paintOrder="stroke"
-            fill={payload.diffColor}
-            fontSize={12}
-            fontWeight="800"
-          >
-            {payload.diffLabel}
-          </text>
-          <text x={cx} y={cy - 10} textAnchor="middle" fill={payload.diffColor} fontSize={12} fontWeight="800">
-            {payload.diffLabel}
-          </text>
-        </>
-      )}
-    </g>
-  );
-};
-
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -110,13 +77,18 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
 
-    // Diferencia real: persona - ideal
+    // Diferencia real (persona - ideal)
     const rawDiff0 = p - i;
-    // Evitar -0.0 por precisión
-    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0; // evita -0.0
 
     const isSuccess = rawDiff >= 0;
-    const diffLabel = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
+    const diffColor = isSuccess ? '#16a34a' : '#ef4444';
+
+    // Para el borde (como tu imagen): entero sin signo, pero coloreado
+    const diffLabelOuter = Math.abs(rawDiff).toFixed(0);
+
+    // Para tooltip: con signo y decimal
+    const diffLabelTooltip = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
 
     return {
       subject: label.key,
@@ -124,8 +96,10 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       description: label.desc,
       persona: p,
       ideal: i,
-      diffLabel,
-      diffColor: isSuccess ? '#16a34a' : '#ef4444',
+      diff: rawDiff,
+      diffColor,
+      diffLabelOuter,
+      diffLabelTooltip,
     };
   });
 
@@ -144,50 +118,82 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
           <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
 
+            {/* ✅ Tick custom: nombre + desc + DIFERENCIA alrededor */}
             <PolarAngleAxis
               dataKey="subject"
-              tick={({ x, y, payload }) => {
-                const label = discLabels.find((l) => l.key === payload.value);
+              tick={({ x, y, payload, cx, cy }) => {
+                const key = payload?.value as string;
+                const label = discLabels.find((l) => l.key === key);
+                const item = data.find((d) => d.subject === key);
 
+                // Posición/alineación como tu versión original
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
 
-                if (payload.value === 'D') {
-                  textAnchor = 'end';
-                  dx = -15;
-                  dy = -10;
-                }
-                if (payload.value === 'I') {
-                  textAnchor = 'start';
-                  dx = 15;
-                  dy = -10;
-                }
-                if (payload.value === 'S') {
-                  textAnchor = 'start';
-                  dx = 15;
-                  dy = 20;
-                }
-                if (payload.value === 'C') {
-                  textAnchor = 'end';
-                  dx = -15;
-                  dy = 20;
-                }
+                if (key === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
+                if (key === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
+                if (key === 'S') { textAnchor = 'start'; dx = 15; dy = 20; }
+                if (key === 'C') { textAnchor = 'end'; dx = -15; dy = 20; }
+
+                const baseX = dx;
+                const baseY = dy;
 
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">
+                    {/* Nombre */}
+                    <text
+                      x={baseX}
+                      y={baseY}
+                      textAnchor={textAnchor}
+                      fill={label?.color}
+                      fontSize={16}
+                      fontWeight="bold"
+                    >
                       {label?.name}
                     </text>
+
+                    {/* Descripción */}
                     <text
-                      x={dx}
-                      y={dy + 14}
+                      x={baseX}
+                      y={baseY + 14}
                       textAnchor={textAnchor}
                       fill="hsl(var(--muted-foreground))"
                       fontSize={11}
                     >
                       {label?.desc}
                     </text>
+
+                    {/* ✅ Número grande (diferencia) */}
+                    {item?.diffLabelOuter != null && (
+                      <>
+                        {/* Stroke blanco (debajo) */}
+                        <text
+                          x={baseX}
+                          y={baseY + 36}
+                          textAnchor={textAnchor}
+                          fill={item.diffColor}
+                          fontSize={18}
+                          fontWeight="900"
+                          stroke="white"
+                          strokeWidth={3}
+                          paintOrder="stroke"
+                        >
+                          {item.diffLabelOuter}
+                        </text>
+                        {/* Texto nítido arriba */}
+                        <text
+                          x={baseX}
+                          y={baseY + 36}
+                          textAnchor={textAnchor}
+                          fill={item.diffColor}
+                          fontSize={18}
+                          fontWeight="900"
+                        >
+                          {item.diffLabelOuter}
+                        </text>
+                      </>
+                    )}
                   </g>
                 );
               }}
@@ -200,7 +206,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={<CustomDot />}
+              dot={false}
             />
 
             <Radar
@@ -213,6 +219,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               dot={false}
             />
 
+            {/* ✅ Tooltip completo */}
             <Tooltip
               content={({ payload }) => {
                 if (!payload?.length) return null;
@@ -225,16 +232,18 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                       {item.fullName}
                     </p>
                     <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+
                     <p className="text-sm">
                       Ideal: <span className="font-medium text-primary">{item.ideal}</span>
                     </p>
                     <p className="text-sm">
                       {personName}: <span className="font-medium text-secondary">{item.persona}</span>
                     </p>
+
                     <p className="text-sm">
                       Diferencia:{' '}
                       <span className="font-bold" style={{ color: item.diffColor }}>
-                        {item.diffLabel}
+                        {item.diffLabelTooltip}
                       </span>
                     </p>
                   </div>

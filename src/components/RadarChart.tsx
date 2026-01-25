@@ -34,39 +34,6 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  if (!cx || !cy || !payload) return null;
-
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
-
-      {payload.diffLabel && (
-        <>
-          <text
-            x={cx}
-            y={cy - 8}
-            textAnchor="middle"
-            fill={payload.diffColor}
-            fontSize={11}
-            fontWeight="800"
-            stroke="white"
-            strokeWidth={3}
-            paintOrder="stroke"
-          >
-            {payload.diffLabel}
-          </text>
-
-          <text x={cx} y={cy - 8} textAnchor="middle" fill={payload.diffColor} fontSize={11} fontWeight="800">
-            {payload.diffLabel}
-          </text>
-        </>
-      )}
-    </g>
-  );
-};
-
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -74,30 +41,37 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
-  const getColor = (label: string, index: number) => {
+  const getLabelColor = (label: string, index: number) => {
     if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
     if (isCompetencias) return competenciaColors[index % competenciaColors.length];
     return 'hsl(var(--muted-foreground))';
   };
 
+  // ✅ Data con diferencia
   const data = labels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
 
-    // Diferencia real: persona - ideal
     const rawDiff0 = p - i;
-    // Evitar -0.0
-    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0;
+    const rawDiff = Math.abs(rawDiff0) < 0.05 ? 0 : rawDiff0; // evita -0.0
 
     const isSuccess = rawDiff >= 0;
-    const diffLabel = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
+    const diffColor = isSuccess ? '#16a34a' : '#ef4444';
+
+    // Como tu imagen: número entero sin signo alrededor
+    const diffLabelOuter = Math.abs(rawDiff).toFixed(0);
+
+    // Tooltip con signo y decimal (+20.0 / -15.0)
+    const diffLabelTooltip = `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`;
 
     return {
       subject: label,
       persona: p,
       ideal: i,
-      diffLabel,
-      diffColor: isSuccess ? '#16a34a' : '#ef4444',
+      diff: rawDiff,
+      diffColor,
+      diffLabelOuter,
+      diffLabelTooltip,
     };
   });
 
@@ -112,38 +86,84 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
         <RechartsRadarChart data={data}>
           <PolarGrid stroke="hsl(var(--border))" />
 
+          {/* ✅ Etiquetas + DIFERENCIA grande alrededor (como tu imagen) */}
           <PolarAngleAxis
             dataKey="subject"
             tick={({ x, y, payload, index, cx, cy }) => {
-              const color = getColor(payload.value, index);
+              // index normalmente viene; si no, lo buscamos
+              const safeIndex =
+                typeof index === 'number'
+                  ? index
+                  : data.findIndex((d) => d.subject === (payload?.value as string));
+
+              const item = data[safeIndex];
+              const labelColor = getLabelColor(payload.value, safeIndex);
+
+              // Empujar el tick hacia afuera
               const dx = x - cx;
               const dy = y - cy;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 20;
+              const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+              const offset = 26;
 
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
 
-              const words = payload.value.split(' ');
+              // Nombre en 1-2 líneas si tiene espacios
+              const words = String(payload.value).split(' ');
               const mid = Math.ceil(words.length / 2);
 
               return (
-                <text
-                  x={nx}
-                  y={ny}
-                  fill={color}
-                  fontSize={10}
-                  fontWeight="700"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                >
-                  <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
-                  {words.length > mid && (
-                    <tspan x={nx} dy="1.1em">
-                      {words.slice(mid).join(' ')}
-                    </tspan>
+                <g>
+                  {/* Nombre */}
+                  <text
+                    x={nx}
+                    y={ny}
+                    fill={labelColor}
+                    fontSize={10}
+                    fontWeight="700"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
+                    {words.length > mid && (
+                      <tspan x={nx} dy="1.1em">
+                        {words.slice(mid).join(' ')}
+                      </tspan>
+                    )}
+                  </text>
+
+                  {/* Número grande (diferencia) */}
+                  {item?.diffLabelOuter != null && (
+                    <>
+                      <text
+                        x={nx}
+                        y={ny + 22}
+                        fill={item.diffColor}
+                        fontSize={16}
+                        fontWeight="800"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        stroke="white"
+                        strokeWidth={3}
+                        paintOrder="stroke"
+                      >
+                        {item.diffLabelOuter}
+                      </text>
+
+                      <text
+                        x={nx}
+                        y={ny + 22}
+                        fill={item.diffColor}
+                        fontSize={16}
+                        fontWeight="800"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        {item.diffLabelOuter}
+                      </text>
+                    </>
                   )}
-                </text>
+                </g>
               );
             }}
           />
@@ -153,9 +173,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             dataKey="ideal"
             stroke="hsl(var(--chart-ideal))"
             fill="hsl(var(--chart-ideal))"
-            fillOpacity={0.2}
+            fillOpacity={0.15}
             strokeWidth={2}
-            dot={<CustomDot />}
+            dot={false}
           />
 
           <Radar
@@ -163,37 +183,33 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             dataKey="persona"
             stroke="hsl(var(--chart-person))"
             fill="hsl(var(--chart-person))"
-            fillOpacity={0.3}
+            fillOpacity={0.25}
             strokeWidth={2}
             dot={false}
           />
 
+          {/* ✅ Tooltip con Diferencia */}
           <Tooltip
             content={({ payload }) => {
               if (!payload?.length) return null;
               const item = payload[0].payload;
 
               return (
-                <div
-                  style={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: 8,
-                    padding: 12,
-                  }}
-                >
-                  <p style={{ fontWeight: 700, marginBottom: 6 }}>{item.subject}</p>
-                  <p style={{ fontSize: 13 }}>
-                    Ideal: <b>{item.ideal}</b>
+                <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                  <p className="font-semibold text-foreground mb-1">{item.subject}</p>
+
+                  <p className="text-sm">
+                    Ideal: <span className="font-semibold">{item.ideal}</span>
                   </p>
-                  <p style={{ fontSize: 13 }}>
-                    {personName}: <b>{item.persona}</b>
+                  <p className="text-sm">
+                    {personName}: <span className="font-semibold">{item.persona}</span>
                   </p>
-                  <p style={{ fontSize: 13 }}>
+
+                  <p className="text-sm">
                     Diferencia:{' '}
-                    <b style={{ color: item.diffColor }}>
-                      {item.diffLabel}
-                    </b>
+                    <span className="font-bold" style={{ color: item.diffColor }}>
+                      {item.diffLabelTooltip}
+                    </span>
                   </p>
                 </div>
               );
