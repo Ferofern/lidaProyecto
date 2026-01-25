@@ -16,21 +16,21 @@ interface DISCRadarChartProps {
 }
 
 const discLabels = [
-  { key: 'D', name: 'Dominante', color: 'hsl(0, 95%, 45%)', desc: 'Directo, firme' },
-  { key: 'I', name: 'Influyente', color: 'hsl(35, 95%, 55%)', desc: 'Extrovertido, negociador' },
-  { key: 'S', name: 'Sólido', color: 'hsl(85, 70%, 45%)', desc: 'Sereno, paciente' },
-  { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
+  { key: 'D', name: 'Dominante', color: '#ef4444', desc: 'Directo, firme' },
+  { key: 'I', name: 'Influyente', color: '#eab308', desc: 'Extrovertido, negociador' },
+  { key: 'S', name: 'Sólido', color: '#84cc16', desc: 'Sereno, paciente' },
+  { key: 'C', name: 'Cumplido', color: '#3b82f6', desc: 'Analítico, prudente' },
 ];
 
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
-    <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">Proactividad</text>
+    <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
       <tspan x="98%" dy="1.2em">las personas</tspan>
     </text>
-    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Receptividad</text>
-    <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
+    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">Receptividad</text>
+    <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">
       <tspan x="2%" dy="-6">Tendencia a</tspan>
       <tspan x="2%" dy="1.2em">las tareas</tspan>
     </text>
@@ -42,23 +42,15 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
   const matchColor = getMatchColor(match);
 
   const data = discLabels.map((label, index) => {
-    const rawP = personaData[index];
-    const rawI = idealData[index];
-
-    const p = (rawP === undefined || rawP === null || isNaN(rawP)) ? 0 : Number(rawP);
-    const i = (rawI === undefined || rawI === null || isNaN(rawI)) ? 0 : Number(rawI);
-
-    const diffVal = Math.abs(p - i);
-    const isSuccess = p >= i;
-
+    const p = Number(personaData?.[index] ?? 0);
+    const i = Number(idealData?.[index] ?? 0);
+    
     return {
       subject: label.key,
       fullName: label.name,
       description: label.desc,
-      persona: p,
-      ideal: i,
-      calculatedDiff: diffVal.toFixed(1),
-      diffColor: isSuccess ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'
+      persona: isNaN(p) ? 0 : p,
+      ideal: isNaN(i) ? 0 : i,
     };
   });
 
@@ -66,31 +58,38 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     const { cx, cy, payload } = props;
     if (!cx || !cy || !payload) return null;
 
+    const p = Number(payload.persona);
+    const i = Number(payload.ideal);
+    const diff = Math.abs(p - i).toFixed(1);
+    const isSuccess = p >= i;
+    
+    const color = isSuccess ? '#16a34a' : '#dc2626';
+
     return (
       <g>
-        <circle cx={cx} cy={cy} r={6} fill={payload.diffColor} stroke="white" strokeWidth={2} />
+        <circle cx={cx} cy={cy} r={6} fill={color} stroke="white" strokeWidth={2} />
         <text
           x={cx}
-          y={cy - 12}
+          y={cy - 15}
           textAnchor="middle"
           stroke="white"
           strokeWidth={3}
           paintOrder="stroke"
-          fill={payload.diffColor}
+          fill={color}
           fontSize={12}
-          fontWeight="900"
+          fontWeight="bold"
         >
-          {payload.calculatedDiff}
+          {diff}
         </text>
         <text
           x={cx}
-          y={cy - 12}
+          y={cy - 15}
           textAnchor="middle"
-          fill={payload.diffColor}
+          fill={color}
           fontSize={12}
-          fontWeight="900"
+          fontWeight="bold"
         >
-          {payload.calculatedDiff}
+          {diff}
         </text>
       </g>
     );
@@ -109,7 +108,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       <div className="relative w-full h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
-            <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
+            <PolarGrid stroke="#e2e8f0" gridType="circle" />
             <PolarAngleAxis
               dataKey="subject"
               tick={({ x, y, payload }) => {
@@ -125,7 +124,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">{label?.name}</text>
-                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" fontSize={11}>{label?.desc}</text>
+                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="#94a3b8" fontSize={11}>{label?.desc}</text>
                   </g>
                 );
               }}
@@ -134,8 +133,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
             <Radar
               name="Perfil Ideal"
               dataKey="ideal"
-              stroke="hsl(var(--chart-ideal))"
-              fill="hsl(var(--chart-ideal))"
+              stroke="#94a3b8"
+              fill="#94a3b8"
               fillOpacity={0.2}
               strokeWidth={2}
               dot={renderDot}
@@ -144,8 +143,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
             <Radar
               name={personName}
               dataKey="persona"
-              stroke="hsl(var(--chart-person))"
-              fill="hsl(var(--chart-person))"
+              stroke="#0f172a"
+              fill="#0f172a"
               fillOpacity={0.3}
               strokeWidth={2}
               dot={false}
@@ -157,11 +156,11 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 const item = payload[0].payload;
                 const color = discLabels.find(l => l.key === item.subject)?.color;
                 return (
-                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                  <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-lg">
                     <p className="font-semibold" style={{ color }}>{item.fullName}</p>
-                    <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                    <p className="text-sm">Ideal: <span className="font-medium text-primary">{item.ideal}</span></p>
-                    <p className="text-sm">{personName}: <span className="font-medium text-secondary">{item.persona}</span></p>
+                    <p className="text-xs text-slate-500 mb-2">{item.description}</p>
+                    <p className="text-sm text-slate-700">Ideal: <span className="font-medium text-blue-600">{item.ideal}</span></p>
+                    <p className="text-sm text-slate-700">{personName}: <span className="font-medium text-slate-900">{item.persona}</span></p>
                   </div>
                 );
               }}

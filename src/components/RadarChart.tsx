@@ -17,20 +17,20 @@ interface RadarChartProps {
 }
 
 const velnaColors: Record<string, string> = {
-  Verbal: 'hsl(280, 70%, 50%)',
-  Espacial: 'hsl(200, 80%, 50%)',
-  Lógico: 'hsl(35, 90%, 50%)',
-  Numérico: 'hsl(150, 70%, 40%)',
-  Abstracto: 'hsl(340, 75%, 55%)',
+  Verbal: '#9333ea',
+  Espacial: '#0ea5e9',
+  Lógico: '#f59e0b',
+  Numérico: '#10b981',
+  Abstracto: '#ec4899',
 };
 
 const competenciaColors = [
-  'hsl(220, 80%, 55%)',
-  'hsl(160, 70%, 45%)',
-  'hsl(30, 85%, 55%)',
-  'hsl(280, 65%, 55%)',
-  'hsl(350, 75%, 55%)',
-  'hsl(180, 70%, 45%)',
+  '#3b82f6',
+  '#14b8a6',
+  '#f97316',
+  '#a855f7',
+  '#ef4444',
+  '#06b6d4',
 ];
 
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
@@ -40,28 +40,20 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const isCompetencias = title === 'Competencias';
 
   const getColor = (label: string, index: number) => {
-    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
+    if (isVelna) return velnaColors[label] || '#94a3b8';
     if (isCompetencias) return competenciaColors[index % competenciaColors.length];
-    return 'hsl(var(--muted-foreground))';
+    return '#94a3b8';
   };
 
   const data = labels.map((label, index) => {
-    const rawP = personaData[index];
-    const rawI = idealData[index];
+    const p = Number(personaData?.[index] ?? 0);
+    const i = Number(idealData?.[index] ?? 0);
     
-    const p = (rawP === undefined || rawP === null || isNaN(rawP)) ? 0 : Number(rawP);
-    const i = (rawI === undefined || rawI === null || isNaN(rawI)) ? 0 : Number(rawI);
-    
-    const diffVal = Math.abs(p - i);
-    const isSuccess = p >= i;
-
     return {
       subject: label,
-      persona: p,
-      ideal: i,
+      persona: isNaN(p) ? 0 : p,
+      ideal: isNaN(i) ? 0 : i,
       color: getColor(label, index),
-      calculatedDiff: diffVal.toFixed(1),
-      diffColor: isSuccess ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'
     };
   });
 
@@ -69,31 +61,38 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     const { cx, cy, payload } = props;
     if (!cx || !cy || !payload) return null;
 
+    const p = Number(payload.persona);
+    const i = Number(payload.ideal);
+    const diff = Math.abs(p - i).toFixed(1);
+    const isSuccess = p >= i;
+    
+    const color = isSuccess ? '#16a34a' : '#dc2626';
+
     return (
       <g>
-        <circle cx={cx} cy={cy} r={6} fill={payload.diffColor} stroke="white" strokeWidth={2} />
+        <circle cx={cx} cy={cy} r={6} fill={color} stroke="white" strokeWidth={2} />
         <text
           x={cx}
-          y={cy - 12}
+          y={cy - 15}
           textAnchor="middle"
           stroke="white"
           strokeWidth={3}
           paintOrder="stroke"
-          fill={payload.diffColor}
+          fill={color}
           fontSize={12}
-          fontWeight="900"
+          fontWeight="bold"
         >
-          {payload.calculatedDiff}
+          {diff}
         </text>
         <text
           x={cx}
-          y={cy - 12}
+          y={cy - 15}
           textAnchor="middle"
-          fill={payload.diffColor}
+          fill={color}
           fontSize={12}
-          fontWeight="900"
+          fontWeight="bold"
         >
-          {payload.calculatedDiff}
+          {diff}
         </text>
       </g>
     );
@@ -108,7 +107,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
       <ResponsiveContainer width="100%" height={400}>
         <RechartsRadarChart data={data}>
-          <PolarGrid stroke="hsl(var(--border))" />
+          <PolarGrid stroke="#e2e8f0" />
           <PolarAngleAxis
             dataKey="subject"
             tick={({ x, y, payload, index, cx, cy }) => {
@@ -116,7 +115,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 25;
+              const offset = 30;
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
               const words = payload.value.split(' ');
@@ -128,7 +127,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                   y={ny}
                   fill={color}
                   fontSize={10}
-                  fontWeight="700"
+                  fontWeight="bold"
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
@@ -144,8 +143,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
           <Radar
             name="Ideal"
             dataKey="ideal"
-            stroke="hsl(var(--chart-ideal))"
-            fill="hsl(var(--chart-ideal))"
+            stroke="#94a3b8"
+            fill="#94a3b8"
             fillOpacity={0.2}
             strokeWidth={2}
             dot={renderDot}
@@ -154,8 +153,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
           <Radar
             name={personName}
             dataKey="persona"
-            stroke="hsl(var(--chart-person))"
-            fill="hsl(var(--chart-person))"
+            stroke="#0f172a"
+            fill="#0f172a"
             fillOpacity={0.3}
             strokeWidth={2}
             dot={false}
@@ -163,9 +162,10 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
           <Tooltip 
             contentStyle={{ 
-              backgroundColor: 'hsl(var(--card))', 
-              border: '1px solid hsl(var(--border))', 
-              borderRadius: 8 
+              backgroundColor: '#ffffff', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: 8,
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
             }}
           />
         </RechartsRadarChart>
