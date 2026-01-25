@@ -33,13 +33,6 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-const renderDot = (props: any, persona: number, ideal: number) => {
-  const { cx, cy } = props;
-  if (!cx || !cy) return null;
-  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
-  return <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
-};
-
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
@@ -59,6 +52,34 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     ideal: idealData[index],
     color: getColor(label, index),
   }));
+
+  const renderIdealDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (!cx || !cy) return null;
+    const diff = payload.persona - payload.ideal;
+    const color = diff >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+    return (
+      <>
+        <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
+        <text
+          x={cx}
+          y={cy - 10}
+          textAnchor="middle"
+          fill={color}
+          fontSize={10}
+          fontWeight="bold"
+        >
+          {diff >= 0 ? `+${diff}` : diff}
+        </text>
+      </>
+    );
+  };
+
+  const renderPersonaDot = (props: any) => {
+    const { cx, cy } = props;
+    if (!cx || !cy) return null;
+    return <circle cx={cx} cy={cy} r={5} fill="hsl(var(--chart-person))" stroke="white" strokeWidth={2} />;
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -96,7 +117,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={(p) => renderDot(p, p.payload.ideal, p.payload.ideal)}
+            dot={renderIdealDot}
           />
           <Radar
             dataKey="persona"
@@ -104,7 +125,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={(p) => renderDot(p, p.payload.persona, p.payload.ideal)}
+            dot={renderPersonaDot}
           />
           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
         </RechartsRadarChart>

@@ -24,16 +24,12 @@ const discLabels = [
 
 const DecorativeLabels = () => (
   <g>
-    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
-      Proactividad
-    </text>
+    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
     <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
       <tspan x="98%" dy="1.2em">las personas</tspan>
     </text>
-    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
-      Receptividad
-    </text>
+    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Receptividad</text>
     <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="2%" dy="-6">Tendencia a</tspan>
       <tspan x="2%" dy="1.2em">las tareas</tspan>
@@ -41,11 +37,25 @@ const DecorativeLabels = () => (
   </g>
 );
 
-const renderDot = (props: any, persona: number, ideal: number) => {
+const renderIdealDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (cx === undefined || cy === undefined) return null;
+  const diff = payload.persona - payload.ideal;
+  const color = diff >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
+      <text x={cx} y={cy - 10} textAnchor="middle" fill={color} fontSize={10} fontWeight="bold">
+        {diff >= 0 ? `+${diff}` : diff}
+      </text>
+    </>
+  );
+};
+
+const renderPersonaDot = (props: any) => {
   const { cx, cy } = props;
   if (cx === undefined || cy === undefined) return null;
-  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
-  return <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
+  return <circle cx={cx} cy={cy} r={5} fill="hsl(var(--chart-person))" stroke="white" strokeWidth={2} />;
 };
 
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
@@ -72,14 +82,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
 
       <div className="relative w-full h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsRadarChart
-            data={data}
-            cx="50%"
-            cy="50%"
-            outerRadius="65%"
-            startAngle={140}
-            endAngle={-220}
-          >
+          <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
 
             <PolarAngleAxis
@@ -89,60 +92,35 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
-
                 if (payload.value === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
                 if (payload.value === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
                 if (payload.value === 'S') { textAnchor = 'start'; dx = 15; dy = 20; }
                 if (payload.value === 'C') { textAnchor = 'end'; dx = -15; dy = 20; }
-
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">
-                      {label?.name}
-                    </text>
-                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" fontSize={11}>
-                      {label?.desc}
-                    </text>
+                    <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">{label?.name}</text>
+                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" fontSize={11}>{label?.desc}</text>
                   </g>
                 );
               }}
             />
 
-            <Radar
-              name="Perfil Ideal"
-              dataKey="ideal"
-              stroke="hsl(var(--chart-ideal))"
-              fill="hsl(var(--chart-ideal))"
-              fillOpacity={0.2}
-              strokeWidth={2}
-              dot={(props) => renderDot(props, props.payload.ideal, props.payload.ideal)}
-            />
+            <Radar name="Perfil Ideal" dataKey="ideal" stroke="hsl(var(--chart-ideal))" fill="hsl(var(--chart-ideal))" fillOpacity={0.2} strokeWidth={2} dot={renderIdealDot} />
+            <Radar name={personName} dataKey="persona" stroke="hsl(var(--chart-person))" fill="hsl(var(--chart-person))" fillOpacity={0.3} strokeWidth={2} dot={renderPersonaDot} />
 
-            <Radar
-              name={personName}
-              dataKey="persona"
-              stroke="hsl(var(--chart-person))"
-              fill="hsl(var(--chart-person))"
-              fillOpacity={0.3}
-              strokeWidth={2}
-              dot={(props) => renderDot(props, props.payload.persona, props.payload.ideal)}
-            />
-
-            <Tooltip
-              content={({ payload }) => {
-                if (!payload?.length) return null;
-                const item = payload[0].payload;
-                const color = discLabels.find(l => l.key === item.subject)?.color;
-                return (
-                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold" style={{ color }}>{item.fullName}</p>
-                    <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                    <p className="text-sm">Ideal: <span className="font-medium text-primary">{item.ideal}</span></p>
-                    <p className="text-sm">{personName}: <span className="font-medium text-secondary">{item.persona}</span></p>
-                  </div>
-                );
-              }}
-            />
+            <Tooltip content={({ payload }) => {
+              if (!payload?.length) return null;
+              const item = payload[0].payload;
+              const color = discLabels.find(l => l.key === item.subject)?.color;
+              return (
+                <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                  <p className="font-semibold" style={{ color }}>{item.fullName}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                  <p className="text-sm">Ideal: <span className="font-medium text-primary">{item.ideal}</span></p>
+                  <p className="text-sm">{personName}: <span className="font-medium text-secondary">{item.persona}</span></p>
+                </div>
+              );
+            }} />
 
             <Customized component={DecorativeLabels} />
           </RechartsRadarChart>
