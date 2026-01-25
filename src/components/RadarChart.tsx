@@ -33,28 +33,47 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
-  const { cx, cy } = props;
-  if (!cx || !cy) return null;
+const CustomDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  
+  if (!cx || !cy || !payload) return null;
 
-  const diff = Math.abs(ideal - persona);
-  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  const persona = Number(payload.persona || 0);
+  const ideal = Number(payload.ideal || 0);
+  const diff = Math.abs(persona - ideal);
+  
+  const isGood = persona >= ideal;
+  const color = isGood ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'; 
 
   return (
-    <>
+    <g>
       <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
       <text
         x={cx}
-        y={cy - 10}
+        y={cy - 12}
         fill={color}
         fontSize={12}
         fontWeight="bold"
         textAnchor="middle"
-        dominantBaseline="middle"
+        dominantBaseline="auto"
+        stroke="hsl(var(--background))"
+        strokeWidth={3}
+        paintOrder="stroke"
       >
         {diff.toFixed(1)}
       </text>
-    </>
+      <text
+        x={cx}
+        y={cy - 12}
+        fill={color}
+        fontSize={12}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="auto"
+      >
+        {diff.toFixed(1)}
+      </text>
+    </g>
   );
 };
 
@@ -73,8 +92,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
   const data = labels.map((label, index) => ({
     subject: label,
-    persona: personaData[index],
-    ideal: idealData[index],
+    persona: Number(personaData[index] || 0),
+    ideal: Number(idealData[index] || 0),
     color: getColor(label, index),
   }));
 
@@ -95,7 +114,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 15;
+              const offset = 20; 
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
               const words = payload.value.split(' ');
@@ -105,7 +124,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                   x={nx}
                   y={ny}
                   fill={color}
-                  fontSize={9}
+                  fontSize={10}
                   fontWeight="700"
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -125,7 +144,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={(p) => renderDotWithDiff(p, p.payload.persona, p.payload.ideal)}
+            dot={<CustomDot />}
           />
 
           <Radar
@@ -134,7 +153,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={() => null}
+            dot={false}
           />
 
           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />

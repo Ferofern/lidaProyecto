@@ -37,28 +37,47 @@ const DecorativeLabels = () => (
   </g>
 );
 
-const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
-  const { cx, cy } = props;
-  if (cx === undefined || cy === undefined) return null;
+const CustomDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  
+  if (!cx || !cy || !payload) return null;
 
-  const diff = Math.abs(ideal - persona);
-  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  const persona = Number(payload.persona || 0);
+  const ideal = Number(payload.ideal || 0);
+  const diff = Math.abs(persona - ideal);
+  
+  const isGood = persona >= ideal;
+  const color = isGood ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'; 
 
   return (
-    <>
+    <g>
       <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
       <text
         x={cx}
-        y={cy - 10}
+        y={cy - 12}
         fill={color}
         fontSize={12}
         fontWeight="bold"
         textAnchor="middle"
-        dominantBaseline="middle"
+        dominantBaseline="auto"
+        stroke="hsl(var(--background))"
+        strokeWidth={3}
+        paintOrder="stroke"
       >
         {diff.toFixed(1)}
       </text>
-    </>
+      <text
+        x={cx}
+        y={cy - 12}
+        fill={color}
+        fontSize={12}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="auto"
+      >
+        {diff.toFixed(1)}
+      </text>
+    </g>
   );
 };
 
@@ -70,8 +89,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     subject: label.key,
     fullName: label.name,
     description: label.desc,
-    persona: personaData[index],
-    ideal: idealData[index],
+    persona: Number(personaData[index] || 0),
+    ideal: Number(idealData[index] || 0),
   }));
 
   return (
@@ -116,7 +135,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={(p) => renderDotWithDiff(p, p.payload.persona, p.payload.ideal)}
+              dot={<CustomDot />}
             />
 
             <Radar
@@ -126,7 +145,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-person))"
               fillOpacity={0.3}
               strokeWidth={2}
-              dot={() => null}
+              dot={false}
             />
 
             <Tooltip
