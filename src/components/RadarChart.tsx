@@ -36,7 +36,6 @@ const competenciaColors = [
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
-
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
@@ -46,39 +45,33 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     return 'hsl(var(--muted-foreground))';
   };
 
-  // Mapeo seguro de datos: Convierte undefined/null a 0 explícitamente
-  const data = labels.map((label, index) => ({
-    subject: label,
-    persona: Number(personaData?.[index] ?? 0),
-    ideal: Number(idealData?.[index] ?? 0),
-    color: getColor(label, index),
-  }));
+  const data = labels.map((label, index) => {
+    const rawP = personaData[index];
+    const rawI = idealData[index];
+    
+    const p = (rawP === undefined || rawP === null || isNaN(rawP)) ? 0 : Number(rawP);
+    const i = (rawI === undefined || rawI === null || isNaN(rawI)) ? 0 : Number(rawI);
+    
+    const diffVal = Math.abs(p - i);
+    const isSuccess = p >= i;
 
-  // Función de renderizado del punto (Dot)
-  const renderCustomDot = (props: any) => {
+    return {
+      subject: label,
+      persona: p,
+      ideal: i,
+      color: getColor(label, index),
+      calculatedDiff: diffVal.toFixed(1),
+      diffColor: isSuccess ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'
+    };
+  });
+
+  const renderDot = (props: any) => {
     const { cx, cy, payload } = props;
-    
-    // Si Recharts no pasa las coordenadas o el payload, no renderizar nada
     if (!cx || !cy || !payload) return null;
-
-    const pVal = Number(payload.persona);
-    const iVal = Number(payload.ideal);
-    
-    // Calculamos la diferencia
-    const diff = Math.abs(pVal - iVal);
-    
-    // Lógica de color: Verde si Persona >= Ideal, Rojo si no
-    // Usamos colores hardcoded HSL para asegurar visibilidad si las variables CSS fallan
-    // Verde: success, Rojo: destructive
-    const isSuccess = pVal >= iVal;
-    const fillColor = isSuccess ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)';
 
     return (
       <g>
-        {/* Círculo del vértice */}
-        <circle cx={cx} cy={cy} r={6} fill={fillColor} stroke="white" strokeWidth={2} />
-        
-        {/* Texto con borde blanco para legibilidad (stroke) */}
+        <circle cx={cx} cy={cy} r={6} fill={payload.diffColor} stroke="white" strokeWidth={2} />
         <text
           x={cx}
           y={cy - 12}
@@ -86,22 +79,21 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
           stroke="white"
           strokeWidth={3}
           paintOrder="stroke"
-          fill={fillColor}
+          fill={payload.diffColor}
           fontSize={12}
           fontWeight="900"
         >
-          {diff.toFixed(1)}
+          {payload.calculatedDiff}
         </text>
-        {/* Texto superior nítido */}
         <text
           x={cx}
           y={cy - 12}
           textAnchor="middle"
-          fill={fillColor}
+          fill={payload.diffColor}
           fontSize={12}
           fontWeight="900"
         >
-          {diff.toFixed(1)}
+          {payload.calculatedDiff}
         </text>
       </g>
     );
@@ -124,10 +116,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 25; // Un poco más lejos para no tapar el dot
+              const offset = 25;
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
-              
               const words = payload.value.split(' ');
               const mid = Math.ceil(words.length / 2);
 
@@ -150,7 +141,6 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             }}
           />
 
-          {/* Radar Ideal: Lleva los Dots personalizados */}
           <Radar
             name="Ideal"
             dataKey="ideal"
@@ -158,10 +148,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={renderCustomDot}
+            dot={renderDot}
           />
 
-          {/* Radar Persona: Sin dots para no duplicar */}
           <Radar
             name={personName}
             dataKey="persona"
@@ -178,7 +167,6 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               border: '1px solid hsl(var(--border))', 
               borderRadius: 8 
             }}
-            formatter={(value: number) => value.toFixed(1)}
           />
         </RechartsRadarChart>
       </ResponsiveContainer>
