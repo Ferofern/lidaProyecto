@@ -34,6 +34,12 @@ export function DataTable({
     );
   }
 
+  const getDiffColor = (persona: number, ideal: number) => {
+    return persona >= ideal
+      ? 'bg-success/10 text-success'
+      : 'bg-destructive/10 text-destructive';
+  };
+
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
       <Table>
@@ -101,7 +107,12 @@ export function DataTable({
                 </TableCell>
 
                 <TableCell className="text-center">
-                  <span className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-md bg-muted/30 font-medium">
+                  <span
+                    className={cn(
+                      'inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-md font-medium',
+                      getDiffColor(persona, ideal)
+                    )}
+                  >
                     {diff.toFixed(1)}
                   </span>
                 </TableCell>
