@@ -66,25 +66,31 @@ export function calculateMatch(persona: number[], ideal: number[]): number {
     !Array.isArray(persona) ||
     !Array.isArray(ideal) ||
     persona.length === 0 ||
-    ideal.length === 0 ||
     persona.length !== ideal.length
   ) {
     return 0;
   }
 
-  let totalDiff = 0;
+  let totalScore = 0;
 
   for (let i = 0; i < persona.length; i++) {
     const p = persona[i];
-    const idealVal = ideal[i];
+    const iVal = ideal[i];
 
-    if (idealVal > 0) {
-      totalDiff += Math.abs(p - idealVal) / idealVal;
+    if (iVal <= 0) {
+      totalScore += 1;
+    } else if (p >= iVal) {
+      totalScore += 1;
+    } else {
+      totalScore += p / iVal;
     }
   }
 
-  const avgDiff = totalDiff / persona.length;
-  const match = 100 * (1 - avgDiff);
+  return Math.round((totalScore / persona.length) * 100);
+}
 
-  return Math.max(0, Math.min(100, match));
+export function getMatchColor(match: number): string {
+  if (match >= 85) return 'text-green-600';
+  if (match >= 60) return 'text-yellow-500';
+  return 'text-red-600';
 }
