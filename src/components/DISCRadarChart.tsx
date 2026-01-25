@@ -16,39 +16,38 @@ interface DISCRadarChartProps {
 }
 
 const discLabels = [
-  { key: 'D', name: 'Dominante', color: '#ef4444', desc: 'Directo, firme' },
-  { key: 'I', name: 'Influyente', color: '#eab308', desc: 'Extrovertido, negociador' },
-  { key: 'S', name: 'Sólido', color: '#84cc16', desc: 'Sereno, paciente' },
-  { key: 'C', name: 'Cumplido', color: '#3b82f6', desc: 'Analítico, prudente' },
+  { key: 'D', name: 'Dominante', color: 'hsl(0, 95%, 45%)', desc: 'Directo, firme' },
+  { key: 'I', name: 'Influyente', color: 'hsl(35, 95%, 55%)', desc: 'Extrovertido, negociador' },
+  { key: 'S', name: 'Sólido', color: 'hsl(85, 70%, 45%)', desc: 'Sereno, paciente' },
+  { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
 ];
 
 const DecorativeLabels = () => (
-  <g pointerEvents="none">
-    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">Proactividad</text>
-    <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">
+  <g>
+    <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
+    <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
       <tspan x="98%" dy="1.2em">las personas</tspan>
     </text>
-    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">Receptividad</text>
-    <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="#94a3b8" fontWeight="bold">
+    <text x="50%" y="95%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Receptividad</text>
+    <text x="5%" y="50%" textAnchor="start" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="2%" dy="-6">Tendencia a</tspan>
       <tspan x="2%" dy="1.2em">las tareas</tspan>
     </text>
   </g>
 );
 
-// Mismo CustomDot robusto que en el otro archivo
+// El mismo componente CustomDot robusto
 const CustomDot = (props: any) => {
   const { cx, cy, payload } = props;
-  
   if (!cx || !cy || !payload) return null;
 
-  const pVal = Number(payload.persona || 0);
-  const iVal = Number(payload.ideal || 0);
-  
-  const diff = Math.abs(pVal - iVal).toFixed(1);
-  const isSuccess = pVal >= iVal;
-  const color = isSuccess ? '#16a34a' : '#dc2626';
+  const persona = Number(payload.persona || 0);
+  const ideal = Number(payload.ideal || 0);
+  const diff = Math.abs(persona - ideal).toFixed(1);
+
+  const isSuccess = persona >= ideal;
+  const color = isSuccess ? '#22c55e' : '#ef4444';
 
   return (
     <g>
@@ -56,7 +55,7 @@ const CustomDot = (props: any) => {
       <text
         x={cx}
         y={cy}
-        dy={4}
+        dy={3}
         textAnchor="middle"
         fill={color}
         fontSize={10}
@@ -93,9 +92,10 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       <div className="relative w-full h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="65%" startAngle={140} endAngle={-220}>
-            <PolarGrid stroke="#e2e8f0" gridType="circle" />
+            <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
             <PolarAngleAxis
               dataKey="subject"
+              // Lógica original para las etiquetas D, I, S, C con sus colores
               tick={({ x, y, payload }) => {
                 const label = discLabels.find(l => l.key === payload.value);
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
@@ -109,17 +109,18 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text x={dx} y={dy} textAnchor={textAnchor} fill={label?.color} fontSize={16} fontWeight="bold">{label?.name}</text>
-                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="#94a3b8" fontSize={11}>{label?.desc}</text>
+                    <text x={dx} y={dy + 14} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" fontSize={11}>{label?.desc}</text>
                   </g>
                 );
               }}
             />
 
+            {/* Radar Ideal con el CustomDot */}
             <Radar
               name="Perfil Ideal"
               dataKey="ideal"
-              stroke="#94a3b8"
-              fill="#94a3b8"
+              stroke="hsl(var(--chart-ideal))"
+              fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
               dot={<CustomDot />}
@@ -128,8 +129,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
             <Radar
               name={personName}
               dataKey="persona"
-              stroke="#0f172a"
-              fill="#0f172a"
+              stroke="hsl(var(--chart-person))"
+              fill="hsl(var(--chart-person))"
               fillOpacity={0.3}
               strokeWidth={2}
               dot={false}
@@ -141,11 +142,11 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 const item = payload[0].payload;
                 const color = discLabels.find(l => l.key === item.subject)?.color;
                 return (
-                  <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-lg">
+                  <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                     <p className="font-semibold" style={{ color }}>{item.fullName}</p>
-                    <p className="text-xs text-slate-500 mb-2">{item.description}</p>
-                    <p className="text-sm text-slate-700">Ideal: <span className="font-medium text-blue-600">{item.ideal}</span></p>
-                    <p className="text-sm text-slate-700">{personName}: <span className="font-medium text-slate-900">{item.persona}</span></p>
+                    <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                    <p className="text-sm">Ideal: <span className="font-medium text-primary">{item.ideal}</span></p>
+                    <p className="text-sm">{personName}: <span className="font-medium text-secondary">{item.persona}</span></p>
                   </div>
                 );
               }}

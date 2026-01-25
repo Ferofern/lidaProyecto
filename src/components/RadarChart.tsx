@@ -17,50 +17,50 @@ interface RadarChartProps {
 }
 
 const velnaColors: Record<string, string> = {
-  Verbal: '#9333ea',
-  Espacial: '#0ea5e9',
-  Lógico: '#f59e0b',
-  Numérico: '#10b981',
-  Abstracto: '#ec4899',
+  Verbal: 'hsl(280, 70%, 50%)',
+  Espacial: 'hsl(200, 80%, 50%)',
+  Lógico: 'hsl(35, 90%, 50%)',
+  Numérico: 'hsl(150, 70%, 40%)',
+  Abstracto: 'hsl(340, 75%, 55%)',
 };
 
 const competenciaColors = [
-  '#3b82f6',
-  '#14b8a6',
-  '#f97316',
-  '#a855f7',
-  '#ef4444',
-  '#06b6d4',
+  'hsl(220, 80%, 55%)',
+  'hsl(160, 70%, 45%)',
+  'hsl(30, 85%, 55%)',
+  'hsl(280, 65%, 55%)',
+  'hsl(350, 75%, 55%)',
+  'hsl(180, 70%, 45%)',
 ];
 
-// Componente Dot aislado para garantizar acceso al payload completo
+// Componente Dot personalizado que calcula la diferencia en el momento de renderizar
 const CustomDot = (props: any) => {
   const { cx, cy, payload } = props;
-  
-  // Validación estricta: si no hay coordenadas o payload, no dibujar
+
+  // Validación: si faltan datos clave, no renderizar
   if (!cx || !cy || !payload) return null;
 
-  // Extracción directa de valores
-  const pVal = Number(payload.persona || 0);
-  const iVal = Number(payload.ideal || 0);
-  
-  // Cálculo de diferencia
-  const diff = Math.abs(pVal - iVal).toFixed(1);
-  
-  // Lógica de color
-  const isSuccess = pVal >= iVal;
-  const color = isSuccess ? '#16a34a' : '#dc2626'; // Green-600 vs Red-600
+  // Extraer valores asegurando que sean números, defaulting a 0
+  const persona = Number(payload.persona || 0);
+  const ideal = Number(payload.ideal || 0);
+
+  // Calcular la diferencia
+  const diff = Math.abs(persona - ideal).toFixed(1);
+
+  // Determinar el color: Verde si Persona >= Ideal, Rojo si no.
+  // Usamos HEX para garantizar el color exacto.
+  const isSuccess = persona >= ideal;
+  const color = isSuccess ? '#22c55e' : '#ef4444'; // green-500 vs red-500
 
   return (
     <g>
-      {/* Círculo de fondo para tapar la línea */}
+      {/* Círculo con fondo blanco para que el texto sea legible */}
       <circle cx={cx} cy={cy} r={8} fill="white" stroke={color} strokeWidth={2} />
-      
       {/* Texto centrado */}
       <text
         x={cx}
         y={cy}
-        dy={4} // Ajuste fino vertical para centrar el texto
+        dy={3} // Ajuste vertical fino
         textAnchor="middle"
         fill={color}
         fontSize={10}
@@ -79,18 +79,18 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
+  // Función original para obtener el color de la etiqueta
   const getColor = (label: string, index: number) => {
-    if (isVelna) return velnaColors[label] || '#94a3b8';
+    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
     if (isCompetencias) return competenciaColors[index % competenciaColors.length];
-    return '#94a3b8';
+    return 'hsl(var(--muted-foreground))';
   };
 
-  // Construcción de datos limpia
+  // Construcción de datos asegurando que no haya nulos/NaN
   const data = labels.map((label, index) => ({
     subject: label,
     persona: Number(personaData?.[index] ?? 0),
     ideal: Number(idealData?.[index] ?? 0),
-    color: getColor(label, index),
   }));
 
   return (
@@ -102,27 +102,27 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
       <ResponsiveContainer width="100%" height={400}>
         <RechartsRadarChart data={data}>
-          <PolarGrid stroke="#e2e8f0" />
+          <PolarGrid stroke="hsl(var(--border))" />
           <PolarAngleAxis
             dataKey="subject"
+            // Lógica original para colorear y posicionar las etiquetas
             tick={({ x, y, payload, index, cx, cy }) => {
               const color = getColor(payload.value, index);
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 30;
+              const offset = 30; // Un poco más de espacio para que no se monte sobre el dot
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
               const words = payload.value.split(' ');
               const mid = Math.ceil(words.length / 2);
-
               return (
                 <text
                   x={nx}
                   y={ny}
                   fill={color}
                   fontSize={10}
-                  fontWeight="bold"
+                  fontWeight="700"
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
@@ -135,35 +135,29 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             }}
           />
 
-          {/* El Radar Ideal lleva el CustomDot */}
+          {/* Radar Ideal: Lleva los Dots personalizados */}
           <Radar
             name="Ideal"
             dataKey="ideal"
-            stroke="#94a3b8"
-            fill="#94a3b8"
+            stroke="hsl(var(--chart-ideal))"
+            fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={<CustomDot />} 
+            dot={<CustomDot />}
           />
 
+          {/* Radar Persona: Sin dots */}
           <Radar
             name={personName}
             dataKey="persona"
-            stroke="#0f172a"
-            fill="#0f172a"
+            stroke="hsl(var(--chart-person))"
+            fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
             dot={false}
           />
 
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: '#ffffff', 
-              border: '1px solid #e2e8f0', 
-              borderRadius: 8,
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
-            }}
-          />
+          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
         </RechartsRadarChart>
       </ResponsiveContainer>
     </div>
