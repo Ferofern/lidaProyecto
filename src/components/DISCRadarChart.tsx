@@ -173,7 +173,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                           y={baseY + 36}
                           textAnchor={textAnchor}
                           fill={item.diffColor}
-                          fontSize={18}
+                          fontSize={10}
                           fontWeight="900"
                           stroke="white"
                           strokeWidth={3}

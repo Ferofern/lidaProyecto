@@ -139,7 +139,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                         x={nx}
                         y={ny + 22}
                         fill={item.diffColor}
-                        fontSize={16}
+                        fontSize={10}
                         fontWeight="800"
                         textAnchor="middle"
                         dominantBaseline="middle"
