@@ -35,7 +35,7 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-// ✅ helper: texto con contorno sin duplicarlo
+/** ✅ Texto con contorno SIN duplicar */
 const OutlinedText = ({
   x,
   y,
@@ -67,6 +67,43 @@ const OutlinedText = ({
     {children}
   </text>
 );
+
+/**
+ * ✅ Split inteligente en hasta "maxLines" líneas,
+ * respetando un máximo de caracteres aproximado por línea.
+ */
+function splitToLines(label: string, maxCharsPerLine: number, maxLines: number) {
+  const words = label.split(' ').filter(Boolean);
+  const lines: string[] = [];
+  let current = '';
+
+  for (const w of words) {
+    const next = current ? `${current} ${w}` : w;
+    if (next.length <= maxCharsPerLine) {
+      current = next;
+    } else {
+      if (current) lines.push(current);
+      current = w;
+      if (lines.length === maxLines - 1) break; // dejamos espacio para última línea
+    }
+  }
+
+  // Empujamos lo que queda
+  const remainingWords = words.slice(lines.join(' ').split(' ').filter(Boolean).length);
+  if (lines.length < maxLines) {
+    const last = [current, ...remainingWords].filter(Boolean).join(' ');
+    if (last) lines.push(last);
+  }
+
+  // Si aún se pasó, recortamos con “…” en la última
+  if (lines.length > maxLines) lines.length = maxLines;
+  const lastIdx = lines.length - 1;
+  if (lines[lastIdx]?.length > maxCharsPerLine) {
+    lines[lastIdx] = lines[lastIdx].slice(0, Math.max(0, maxCharsPerLine - 1)).trimEnd() + '…';
+  }
+
+  return lines;
+}
 
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
@@ -101,6 +138,15 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     };
   });
 
+  // ✅ Config visual por tipo
+  const outerRadius = isCompetencias ? '70%' : '74%'; // más grande
+  const chartHeight = isCompetencias ? 'h-[560px] md:h-[620px]' : 'h-[540px] md:h-[600px]';
+
+  // Margen más razonable (menos blanco, radar más grande)
+  const margin = isCompetencias
+    ? { top: 42, right: 70, bottom: 42, left: 70 }
+    : { top: 36, right: 60, bottom: 36, left: 60 };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -108,13 +154,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
         <span className={`text-lg font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
       </div>
 
-      <div className="w-full h-[430px] md:h-[480px] overflow-visible">
+      <div className={`w-full ${chartHeight} overflow-visible`}>
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsRadarChart
-            data={data}
-            outerRadius="58%"
-            margin={{ top: 55, right: 85, bottom: 55, left: 85 }}
-          >
+          <RechartsRadarChart data={data} outerRadius={outerRadius} margin={margin}>
             <PolarGrid stroke="hsl(var(--border))" />
 
             <PolarAngleAxis
@@ -133,19 +175,23 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                 const dy = y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                const baseOffset = isCompetencias ? 42 : 32;
+                // ✅ Empujar hacia afuera, pero no tanto como antes
+                const baseOffset = isCompetencias ? 36 : 28;
 
                 const nx = cx + (dx / dist) * (dist + baseOffset);
                 const ny = cy + (dy / dist) * (dist + baseOffset);
 
-                const words = labelText.split(' ');
-                const mid = Math.ceil(words.length / 2);
+                // ✅ 3 líneas en Competencias, 2 en VELNA
+                const maxLines = isCompetencias ? 3 : 2;
+                const maxChars = isCompetencias ? 14 : 16;
+                const lines = splitToLines(labelText, maxChars, maxLines);
 
-                const lineCount = words.length > mid ? 2 : 1;
-                const numberDy = lineCount === 2 ? 30 : 22;
-
-                const labelFontSize = isCompetencias ? 9.5 : 10;
+                // Tamaños ajustados para que el radar gane espacio
+                const labelFontSize = isCompetencias ? 9.3 : 10.2;
                 const numberFontSize = isCompetencias ? 14 : 16;
+
+                // ✅ separar el número según cantidad de líneas
+                const numberDy = 20 + (lines.length - 1) * 12;
 
                 return (
                   <g>
@@ -158,23 +204,15 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
-                      <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
-                      {words.length > mid && (
-                        <tspan x={nx} dy="1.1em">
-                          {words.slice(mid).join(' ')}
+                      {lines.map((ln, i) => (
+                        <tspan key={i} x={nx} dy={i === 0 ? 0 : '1.15em'}>
+                          {ln}
                         </tspan>
-                      )}
+                      ))}
                     </text>
 
-                    {/* ✅ número con contorno SIN duplicado */}
                     {item?.diffLabelOuter != null && (
-                      <OutlinedText
-                        x={nx}
-                        y={ny + numberDy}
-                        fill={item.diffColor}
-                        fontSize={numberFontSize}
-                        fontWeight={900}
-                      >
+                      <OutlinedText x={nx} y={ny + numberDy} fill={item.diffColor} fontSize={numberFontSize} fontWeight={900}>
                         {item.diffLabelOuter}
                       </OutlinedText>
                     )}
@@ -235,4 +273,3 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     </div>
   );
 }
-``

@@ -24,21 +24,15 @@ const discLabels = [
   { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
 ];
 
+/** ✅ Texto decorativo (lo mantenemos adentro para que no se corte) */
 const DecorativeLabels = () => (
   <g pointerEvents="none">
-    <text
-      x="50%"
-      y="22"
-      textAnchor="middle"
-      fontSize="12"
-      fill="hsl(var(--muted-foreground))"
-      fontWeight="bold"
-    >
+    <text x="50%" y="22" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Proactividad
     </text>
 
     <text
-      x="92%"
+      x="90%"
       y="50%"
       textAnchor="end"
       dominantBaseline="middle"
@@ -46,27 +40,20 @@ const DecorativeLabels = () => (
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="95%" dy="-6">
+      <tspan x="93%" dy="-6">
         Tendencia a
       </tspan>
-      <tspan x="95%" dy="1.2em">
+      <tspan x="93%" dy="1.2em">
         las personas
       </tspan>
     </text>
 
-    <text
-      x="50%"
-      y="97%"
-      textAnchor="middle"
-      fontSize="12"
-      fill="hsl(var(--muted-foreground))"
-      fontWeight="bold"
-    >
+    <text x="50%" y="97%" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       Receptividad
     </text>
 
     <text
-      x="6%"
+      x="10%"
       y="50%"
       textAnchor="start"
       dominantBaseline="middle"
@@ -74,17 +61,17 @@ const DecorativeLabels = () => (
       fill="hsl(var(--muted-foreground))"
       fontWeight="bold"
     >
-      <tspan x="5%" dy="-6">
+      <tspan x="7%" dy="-6">
         Tendencia a
       </tspan>
-      <tspan x="5%" dy="1.2em">
+      <tspan x="7%" dy="1.2em">
         las tareas
       </tspan>
     </text>
   </g>
 );
 
-// ✅ helper: texto con contorno sin duplicarlo
+/** ✅ Texto con contorno (SIN duplicar, se ve premium) */
 const OutlinedText = ({
   x,
   y,
@@ -140,8 +127,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       ideal: i,
       diff: rawDiff,
       diffColor,
-      diffLabelOuter: Math.abs(rawDiff).toFixed(0), // afuera: entero
-      diffLabelTooltip: `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`, // tooltip: +20.0
+      diffLabelOuter: Math.abs(rawDiff).toFixed(0),
+      diffLabelTooltip: `${rawDiff >= 0 ? '+' : ''}${rawDiff.toFixed(1)}`,
     };
   });
 
@@ -155,16 +142,19 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
         </div>
       </div>
 
-      <div className="relative w-full h-[420px] md:h-[460px] overflow-visible">
+      {/* ✅ Más alto + radar más grande */}
+      <div className="relative w-full h-[520px] md:h-[560px] overflow-visible">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart
             data={data}
             cx="50%"
             cy="50%"
-            outerRadius="60%"
+            // ✅ más grande que antes
+            outerRadius="72%"
             startAngle={140}
             endAngle={-220}
-            margin={{ top: 48, right: 110, bottom: 48, left: 110 }}
+            // ✅ menos margen para que el radar ocupe más
+            margin={{ top: 36, right: 70, bottom: 36, left: 70 }}
           >
             <PolarGrid stroke="hsl(var(--border))" gridType="circle" />
 
@@ -175,14 +165,15 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 const label = discLabels.find((l) => l.key === key);
                 const item = data.find((d) => d.subject === key);
 
+                // ✅ Más cerca para que no empuje tanto a los bordes (pero sin montarse)
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
 
-                if (key === 'D') { textAnchor = 'end'; dx = -22; dy = -14; }
-                if (key === 'I') { textAnchor = 'start'; dx = 22; dy = -14; }
-                if (key === 'S') { textAnchor = 'start'; dx = 22; dy = 26; }
-                if (key === 'C') { textAnchor = 'end'; dx = -22; dy = 26; }
+                if (key === 'D') { textAnchor = 'end'; dx = -14; dy = -12; }
+                if (key === 'I') { textAnchor = 'start'; dx = 14; dy = -12; }
+                if (key === 'S') { textAnchor = 'start'; dx = 14; dy = 24; }
+                if (key === 'C') { textAnchor = 'end'; dx = -14; dy = 24; }
 
                 const nameY = dy;
                 const descY = dy + 14;
@@ -196,7 +187,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                       textAnchor={textAnchor}
                       dominantBaseline="middle"
                       fill={label?.color}
-                      fontSize={15}
+                      fontSize={14}   // un pelín menor para estética
                       fontWeight="800"
                     >
                       {label?.name}
@@ -214,7 +205,6 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                       {label?.desc}
                     </text>
 
-                    {/* ✅ número con contorno sin duplicado */}
                     {item?.diffLabelOuter != null && (
                       <OutlinedText
                         x={dx}
