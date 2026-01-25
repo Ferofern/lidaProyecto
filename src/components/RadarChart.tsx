@@ -6,13 +6,13 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { calculateMatch, getMatchColor } from '@/lib/csvParser';
+import { ProfileData } from '@/lib/csvParser';
 
 interface RadarChartProps {
   title: string;
-  labels: string[];
-  personaData: number[];
-  idealData: number[];
-  personName: string;
+  profile: ProfileData;
+  type: 'VELNA' | 'Competencias';
 }
 
 const velnaColors: Record<string, string> = {
@@ -30,6 +30,7 @@ const competenciaColors = [
   'hsl(280, 65%, 55%)',
   'hsl(350, 75%, 55%)',
   'hsl(180, 70%, 45%)',
+  'hsl(50, 80%, 50%)',
 ];
 
 const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
@@ -57,26 +58,37 @@ const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   );
 };
 
-export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
-  const isVelna = title === 'VELNA';
-  const isCompetencias = title === 'Competencias';
+export function RadarChart({ title, profile, type }: RadarChartProps) {
+  const labels =
+    type === 'VELNA'
+      ? ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto']
+      : profile.compLabels;
+
+  const personaData = type === 'VELNA' ? profile.velnaPersona : profile.compPersona;
+  const idealData = type === 'VELNA' ? profile.velnaIdeal : profile.compIdeal;
+
+  const match = calculateMatch(personaData, idealData);
+  const matchColor = getMatchColor(match);
 
   const getColor = (label: string, index: number) => {
-    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
-    if (isCompetencias) return competenciaColors[index % competenciaColors.length];
-    return 'hsl(var(--muted-foreground))';
+    if (type === 'VELNA') return velnaColors[label] || 'hsl(var(--muted-foreground))';
+    return competenciaColors[index % competenciaColors.length];
   };
 
-  const data = labels.map((label, i) => ({
+  const data = labels.map((label, index) => ({
     subject: label,
-    persona: personaData[i],
-    ideal: idealData[i],
-    color: getColor(label, i),
+    persona: personaData[index],
+    ideal: idealData[index],
+    color: getColor(label, index),
   }));
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <span className={`text-lg font-bold ${matchColor}`}>{match.toFixed(1)}%</span>
+      </div>
+
       <ResponsiveContainer width="100%" height={400}>
         <RechartsRadarChart data={data}>
           <PolarGrid stroke="hsl(var(--border))" />
@@ -95,9 +107,14 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={() => null}
           />
-          <Tooltip />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: 8,
+            }}
+          />
         </RechartsRadarChart>
       </ResponsiveContainer>
     </div>
