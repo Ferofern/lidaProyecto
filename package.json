@@ -12,8 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "git add . && (git commit -m \"Deploy automático\" || echo \"⚠️ Nada nuevo que guardar\") && git push origin main && npm run build && npx gh-pages -d dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
