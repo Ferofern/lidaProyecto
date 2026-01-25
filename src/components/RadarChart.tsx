@@ -15,6 +15,7 @@ interface RadarChartProps {
   personaData: number[];
   idealData: number[];
   personName: string;
+  matchScore?: number; // ✅ Nueva prop opcional para pasar el match real (CSV)
 }
 
 const velnaColors: Record<string, string> = {
@@ -70,11 +71,21 @@ function splitText(text: string, maxLen: number) {
   return lines.length > 3 ? [lines[0], lines[1], '...'] : lines;
 }
 
-export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
-  const match = calculateMatch(personaData, idealData);
-  const matchColor = getMatchColor(match);
+export function RadarChart({ title, labels, personaData, idealData, personName, matchScore }: RadarChartProps) {
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
+
+  // ✅ LÓGICA HÍBRIDA:
+  // Si es Competencias -> Calculamos nosotros (porque el CSV no suele traer este match específico o queremos controlarlo).
+  // Si es VELNA -> Usamos el matchScore que viene del CSV (pasado por props).
+  let finalMatch = 0;
+  if (isCompetencias) {
+    finalMatch = calculateMatch(personaData, idealData);
+  } else {
+    finalMatch = matchScore ?? 0; // Fallback a 0 si no viene
+  }
+
+  const matchColor = getMatchColor(finalMatch);
 
   const getColor = (label: string, idx: number) => {
     if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
@@ -104,7 +115,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
         <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">{title}</h3>
         <div className="flex items-center gap-2 bg-secondary/20 px-2 py-0.5 rounded-full">
           <span className="text-[10px] text-muted-foreground uppercase font-bold">Match</span>
-          <span className={`text-sm font-extrabold ${matchColor}`}>{match.toFixed(0)}%</span>
+          <span className={`text-sm font-extrabold ${matchColor}`}>{finalMatch.toFixed(0)}%</span>
         </div>
       </div>
 

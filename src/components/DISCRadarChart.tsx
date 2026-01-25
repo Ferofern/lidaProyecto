@@ -14,6 +14,7 @@ interface DISCRadarChartProps {
   personaData: number[];
   idealData: number[];
   personName: string;
+  matchScore?: number; // ✅ Nueva prop para el match real del CSV
 }
 
 const discLabels = [
@@ -86,9 +87,10 @@ const OutlinedText = ({
   </text>
 );
 
-export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
-  const match = calculateMatch(personaData, idealData);
-  const matchColor = getMatchColor(match);
+export function DISCRadarChart({ personaData, idealData, personName, matchScore }: DISCRadarChartProps) {
+  // ✅ Usamos el match del CSV si existe, si no, calculamos (fallback)
+  const finalMatch = matchScore ?? calculateMatch(personaData, idealData);
+  const matchColor = getMatchColor(finalMatch);
 
   const data = discLabels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
@@ -119,7 +121,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
         <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">DISC</h3>
         <div className="flex items-center gap-2 bg-secondary/20 px-2 py-0.5 rounded-full">
           <span className="text-[10px] text-muted-foreground uppercase font-bold">Match</span>
-          <span className={`text-sm font-extrabold ${matchColor}`}>{match.toFixed(0)}%</span>
+          <span className={`text-sm font-extrabold ${matchColor}`}>{finalMatch.toFixed(0)}%</span>
         </div>
       </div>
 
