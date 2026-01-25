@@ -37,10 +37,8 @@ const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   const { cx, cy } = props;
   if (!cx || !cy) return null;
 
-  const personaNum = Number(persona) || 0;
-  const idealNum = Number(ideal) || 0;
-  const diff = Math.abs(idealNum - personaNum);
-  const color = personaNum >= idealNum ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  const diff = Math.abs(ideal - persona);
+  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
 
   return (
     <>
@@ -75,8 +73,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
 
   const data = labels.map((label, index) => ({
     subject: label,
-    persona: Number(personaData[index]) || 0,
-    ideal: Number(idealData[index]) || 0,
+    persona: personaData[index],
+    ideal: idealData[index],
     color: getColor(label, index),
   }));
 

@@ -41,10 +41,8 @@ const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   const { cx, cy } = props;
   if (cx === undefined || cy === undefined) return null;
 
-  const personaNum = Number(persona) || 0;
-  const idealNum = Number(ideal) || 0;
-  const diff = Math.abs(idealNum - personaNum);
-  const color = personaNum >= idealNum ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  const diff = Math.abs(ideal - persona);
+  const color = persona >= ideal ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
 
   return (
     <>
@@ -72,8 +70,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     subject: label.key,
     fullName: label.name,
     description: label.desc,
-    persona: Number(personaData[index]) || 0,
-    ideal: Number(idealData[index]) || 0,
+    persona: personaData[index],
+    ideal: idealData[index],
   }));
 
   return (
