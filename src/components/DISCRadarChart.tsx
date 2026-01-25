@@ -37,13 +37,31 @@ const DecorativeLabels = () => (
   </g>
 );
 
-const renderDot = (props: any, persona: any, ideal: any) => {
+const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   const { cx, cy } = props;
   if (cx === undefined || cy === undefined) return null;
+
   const personaNum = Number(persona) || 0;
   const idealNum = Number(ideal) || 0;
+  const diff = Math.abs(idealNum - personaNum);
   const color = personaNum >= idealNum ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
-  return <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
+
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
+      <text
+        x={cx}
+        y={cy - 10}
+        fill={color}
+        fontSize={12}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {diff.toFixed(1)}
+      </text>
+    </>
+  );
 };
 
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
@@ -100,7 +118,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={(p) => renderDot(p, p.payload.persona, p.payload.ideal)}
+              dot={(p) => renderDotWithDiff(p, p.payload.persona, p.payload.ideal)}
             />
 
             <Radar

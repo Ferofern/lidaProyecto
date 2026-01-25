@@ -33,13 +33,31 @@ const competenciaColors = [
   'hsl(180, 70%, 45%)',
 ];
 
-const renderDot = (props: any, persona: any, ideal: any) => {
+const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   const { cx, cy } = props;
   if (!cx || !cy) return null;
+
   const personaNum = Number(persona) || 0;
   const idealNum = Number(ideal) || 0;
+  const diff = Math.abs(idealNum - personaNum);
   const color = personaNum >= idealNum ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
-  return <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
+
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
+      <text
+        x={cx}
+        y={cy - 10}
+        fill={color}
+        fontSize={12}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {diff.toFixed(1)}
+      </text>
+    </>
+  );
 };
 
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
@@ -109,7 +127,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-ideal))"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={(p) => renderDot(p, p.payload.persona, p.payload.ideal)}
+            dot={(p) => renderDotWithDiff(p, p.payload.persona, p.payload.ideal)}
           />
 
           <Radar
@@ -118,7 +136,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={(p) => null} // No pintar diferencia aquí
+            dot={() => null}
           />
 
           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
