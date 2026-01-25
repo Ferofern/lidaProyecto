@@ -7,13 +7,12 @@ import {
   Tooltip,
 } from 'recharts';
 import { calculateMatch, getMatchColor } from '@/lib/csvParser';
+import { ProfileData } from '@/lib/csvParser';
 
 interface RadarChartProps {
   title: string;
-  labels: string[];
-  personaData: number[];
-  idealData: number[];
-  personName: string;
+  profile: ProfileData;
+  type: 'VELNA' | 'Competencias';
 }
 
 const velnaColors: Record<string, string> = {
@@ -31,6 +30,7 @@ const competenciaColors = [
   'hsl(280, 65%, 55%)',
   'hsl(350, 75%, 55%)',
   'hsl(180, 70%, 45%)',
+  'hsl(50, 80%, 50%)',
 ];
 
 const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
@@ -58,23 +58,27 @@ const renderDotWithDiff = (props: any, persona: number, ideal: number) => {
   );
 };
 
-export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
+export function RadarChart({ title, profile, type }: RadarChartProps) {
+  const labels =
+    type === 'VELNA'
+      ? ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto']
+      : profile.compLabels;
+
+  const personaData = type === 'VELNA' ? profile.velnaPersona : profile.compPersona;
+  const idealData = type === 'VELNA' ? profile.velnaIdeal : profile.compIdeal;
+
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
 
-  const isVelna = title === 'VELNA';
-  const isCompetencias = title === 'Competencias';
-
   const getColor = (label: string, index: number) => {
-    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
-    if (isCompetencias) return competenciaColors[index % competenciaColors.length];
-    return 'hsl(var(--muted-foreground))';
+    if (type === 'VELNA') return velnaColors[label] || 'hsl(var(--muted-foreground))';
+    return competenciaColors[index % competenciaColors.length];
   };
 
   const data = labels.map((label, index) => ({
     subject: label,
-    persona: personaData[index] ?? 0,
-    ideal: idealData[index] ?? 0,
+    persona: personaData[index],
+    ideal: idealData[index],
     color: getColor(label, index),
   }));
 
@@ -88,37 +92,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
       <ResponsiveContainer width="100%" height={400}>
         <RechartsRadarChart data={data}>
           <PolarGrid stroke="hsl(var(--border))" />
-          <PolarAngleAxis
-            dataKey="subject"
-            tick={({ x, y, payload, index, cx, cy }) => {
-              const color = getColor(payload.value, index);
-              const dx = x - cx;
-              const dy = y - cy;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 15;
-              const nx = cx + (dx / distance) * (distance + offset);
-              const ny = cy + (dy / distance) * (distance + offset);
-              const words = payload.value.split(' ');
-              const mid = Math.ceil(words.length / 2);
-              return (
-                <text
-                  x={nx}
-                  y={ny}
-                  fill={color}
-                  fontSize={9}
-                  fontWeight="700"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                >
-                  <tspan x={nx}>{words.slice(0, mid).join(' ')}</tspan>
-                  {words.length > mid && (
-                    <tspan x={nx} dy="1.2em">{words.slice(mid).join(' ')}</tspan>
-                  )}
-                </text>
-              );
-            }}
-          />
-
+          <PolarAngleAxis dataKey="subject" />
           <Radar
             dataKey="ideal"
             stroke="hsl(var(--chart-ideal))"
@@ -127,16 +101,13 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             strokeWidth={2}
             dot={(p) => renderDotWithDiff(p, p.payload.persona, p.payload.ideal)}
           />
-
           <Radar
             dataKey="persona"
             stroke="hsl(var(--chart-person))"
             fill="hsl(var(--chart-person))"
             fillOpacity={0.3}
             strokeWidth={2}
-            dot={() => null}
           />
-
           <Tooltip
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',

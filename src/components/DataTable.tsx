@@ -8,37 +8,21 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ProfileData } from '@/lib/csvParser';
 
 interface DataTableProps {
-  labels: string[];
-  personaData: number[];
-  idealData: number[];
-  personName: string;
+  profile: ProfileData;
   editable?: boolean;
   onDataChange?: (index: number, type: 'persona' | 'ideal', value: number) => void;
 }
 
-export function DataTable({
-  labels,
-  personaData,
-  idealData,
-  personName,
-  editable = false,
-  onDataChange
-}: DataTableProps) {
-  if (!labels || labels.length === 0) {
-    return (
-      <div className="rounded-lg border border-border p-8 text-center text-muted-foreground text-sm bg-card">
-        Esperando datos de competencias...
-      </div>
-    );
-  }
+export function DataTable({ profile, editable = false, onDataChange }: DataTableProps) {
+  const labels = profile.compLabels;
+  const personaData = profile.compPersona;
+  const idealData = profile.compIdeal;
 
-  const getDiffColor = (persona: number, ideal: number) => {
-    return persona >= ideal
-      ? 'bg-success/10 text-success'
-      : 'bg-destructive/10 text-destructive';
-  };
+  const getDiffColor = (persona: number, ideal: number) =>
+    persona >= ideal ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive';
 
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
@@ -46,35 +30,27 @@ export function DataTable({
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold">Variable</TableHead>
-            <TableHead className="text-center font-semibold">{personName}</TableHead>
+            <TableHead className="text-center font-semibold">{profile.nombrePersona}</TableHead>
             <TableHead className="text-center font-semibold">Perfil Ideal</TableHead>
             <TableHead className="text-center font-semibold">Diferencia</TableHead>
           </TableRow>
         </TableHeader>
-
         <TableBody>
-          {labels.map((label, index) => {
-            const persona = personaData[index] ?? 0;
-            const ideal = idealData[index] ?? 0;
+          {labels.map((label, i) => {
+            const persona = personaData[i];
+            const ideal = idealData[i];
             const diff = Math.abs(ideal - persona);
 
             return (
-              <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+              <TableRow key={i} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="font-medium text-sm">{label}</TableCell>
 
                 <TableCell className="text-center p-2">
                   {editable ? (
                     <Input
                       type="number"
-                      min={0}
                       value={persona}
-                      onChange={(e) =>
-                        onDataChange?.(
-                          index,
-                          'persona',
-                          Number(e.target.value)
-                        )
-                      }
+                      onChange={(e) => onDataChange?.(i, 'persona', Number(e.target.value))}
                       className="h-8 w-20 text-center mx-auto bg-secondary/10 border-secondary/20 focus-visible:ring-secondary"
                     />
                   ) : (
@@ -88,15 +64,8 @@ export function DataTable({
                   {editable ? (
                     <Input
                       type="number"
-                      min={0}
                       value={ideal}
-                      onChange={(e) =>
-                        onDataChange?.(
-                          index,
-                          'ideal',
-                          Number(e.target.value)
-                        )
-                      }
+                      onChange={(e) => onDataChange?.(i, 'ideal', Number(e.target.value))}
                       className="h-8 w-20 text-center mx-auto bg-primary/10 border-primary/20 focus-visible:ring-primary"
                     />
                   ) : (
@@ -107,12 +76,7 @@ export function DataTable({
                 </TableCell>
 
                 <TableCell className="text-center">
-                  <span
-                    className={cn(
-                      'inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-md font-medium',
-                      getDiffColor(persona, ideal)
-                    )}
-                  >
+                  <span className={cn('inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-md font-medium', getDiffColor(persona, ideal))}>
                     {diff.toFixed(1)}
                   </span>
                 </TableCell>
