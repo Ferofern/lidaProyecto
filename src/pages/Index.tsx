@@ -20,7 +20,10 @@ const defaultData: ProfileData = {
   velnaIdeal: [0, 0, 0, 0, 0],
   compLabels: [],
   compPersona: [],
-  compIdeal: []
+  compIdeal: [],
+  // ✅ Inicializamos los matches en 0
+  discMatch: 0,
+  velnaMatch: 0
 };
 
 export default function Index() {
@@ -158,6 +161,8 @@ export default function Index() {
                 personaData={data.discPersona}
                 idealData={data.discIdeal}
                 personName={data.nombrePersona}
+                // ✅ Pasamos el match real del CSV
+                matchScore={data.discMatch}
               />
             </ChartCard>
 
@@ -174,6 +179,8 @@ export default function Index() {
                 personaData={data.velnaPersona}
                 idealData={data.velnaIdeal}
                 personName={data.nombrePersona}
+                // ✅ Pasamos el match real del CSV
+                matchScore={data.velnaMatch}
               />
             </ChartCard>
 
@@ -190,6 +197,7 @@ export default function Index() {
                 personaData={data.compPersona}
                 idealData={data.compIdeal}
                 personName={data.nombrePersona}
+                // ✅ NO pasamos matchScore aquí, para que calcule el automático
               />
             </ChartCard>
           </div>
