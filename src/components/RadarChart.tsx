@@ -15,7 +15,7 @@ interface RadarChartProps {
   personaData: number[];
   idealData: number[];
   personName: string;
-  matchScore?: number; // ✅ Nueva prop opcional para pasar el match real (CSV)
+  matchScore?: number;
 }
 
 const velnaColors: Record<string, string> = {
@@ -53,7 +53,6 @@ const OutlinedText = ({ x, y, fill, fontSize, fontWeight, children }: any) => (
   </text>
 );
 
-// Función utilitaria para partir texto en líneas cortas
 function splitText(text: string, maxLen: number) {
   const words = text.split(' ');
   const lines: string[] = [];
@@ -75,14 +74,11 @@ export function RadarChart({ title, labels, personaData, idealData, personName, 
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
-  // ✅ LÓGICA HÍBRIDA:
-  // Si es Competencias -> Calculamos nosotros (porque el CSV no suele traer este match específico o queremos controlarlo).
-  // Si es VELNA -> Usamos el matchScore que viene del CSV (pasado por props).
   let finalMatch = 0;
   if (isCompetencias) {
     finalMatch = calculateMatch(personaData, idealData);
   } else {
-    finalMatch = matchScore ?? 0; // Fallback a 0 si no viene
+    finalMatch = matchScore ?? 0;
   }
 
   const matchColor = getMatchColor(finalMatch);
@@ -95,17 +91,21 @@ export function RadarChart({ title, labels, personaData, idealData, personName, 
   const data = labels.map((label, index) => {
     const p = Number(personaData?.[index] ?? 0);
     const i = Number(idealData?.[index] ?? 0);
-    const diff = p - i;
-    const absDiff = Math.abs(diff);
+    const rawDiff = p - i;
+    
+    // Evitar -0.0 visual
+    const finalDiff = Math.abs(rawDiff) < 0.1 ? 0 : rawDiff;
+    const roundedDiff = Math.round(finalDiff);
     
     return {
       subject: label,
       persona: p,
       ideal: i,
       color: getColor(label, index),
-      diffColor: diff >= 0 ? '#16a34a' : '#ef4444',
-      diffLabel: Math.round(absDiff).toString(),
-      tooltipDiff: (diff > 0 ? '+' : '') + diff.toFixed(1)
+      diffColor: finalDiff >= 0 ? '#16a34a' : '#ef4444',
+      // ✅ AQUI EL CAMBIO: Añadimos el '+' si es positivo
+      diffLabel: (roundedDiff > 0 ? '+' : '') + roundedDiff,
+      tooltipDiff: (finalDiff > 0 ? '+' : '') + finalDiff.toFixed(1)
     };
   });
 
@@ -119,12 +119,11 @@ export function RadarChart({ title, labels, personaData, idealData, personName, 
         </div>
       </div>
 
-      {/* Altura unificada compacta */}
       <div className="relative w-full h-[300px] sm:h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsRadarChart 
             data={data} 
-            outerRadius={isCompetencias ? "65%" : "70%"} // Competencias tiene más texto, radio menor
+            outerRadius={isCompetencias ? "65%" : "70%"} 
             margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
           >
             <PolarGrid stroke="hsl(var(--border))" />
@@ -136,11 +135,9 @@ export function RadarChart({ title, labels, personaData, idealData, personName, 
                 const d = data[idx] || data.find(i => i.subject === payload.value);
                 if (!d) return null;
 
-                // Cálculo radial para posicionar etiquetas
                 const dx = x - cx;
                 const dy = y - cy;
                 const dist = Math.sqrt(dx*dx + dy*dy);
-                // Offset reducido para mantenerlo compacto
                 const offset = isCompetencias ? 18 : 22; 
                 const nx = cx + (dx/dist) * (dist + offset);
                 const ny = cy + (dy/dist) * (dist + offset);
@@ -165,7 +162,6 @@ export function RadarChart({ title, labels, personaData, idealData, personName, 
                       ))}
                     </text>
                     
-                    {/* Número de diferencia pegado debajo del texto */}
                     <OutlinedText 
                       x={nx} 
                       y={ny + (lines.length * 6) + 8} 
