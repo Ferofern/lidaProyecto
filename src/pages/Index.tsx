@@ -7,13 +7,13 @@ import { ChartCard } from '@/components/ChartCard';
 import { parseCSV, ProfileData } from '@/lib/csvParser';
 import { BarChart3, Users, Brain, Target, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 const velnaLabels = ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto'];
 const discTableLabels = ['D - Dominante', 'I - Influyente', 'S - Sólido', 'C - Cumplido'];
 
-// Datos por defecto para inicializar la aplicación vacía
 const defaultData: ProfileData = {
-  nombrePersona: 'Sin Datos',
+  nombrePersona: 'Persona',
   discPersona: [0, 0, 0, 0],
   discIdeal: [0, 0, 0, 0],
   velnaPersona: [0, 0, 0, 0, 0],
@@ -24,11 +24,9 @@ const defaultData: ProfileData = {
 };
 
 export default function Index() {
-  // Inicializamos con defaultData en lugar de null para que siempre se muestre el dashboard
   const [data, setData] = useState<ProfileData>(defaultData);
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
-  // Estado para saber si se cargó un archivo, para mostrar/ocultar el mensaje de estado vacío inferior
   const [isFileLoaded, setIsFileLoaded] = useState(false);
 
   const handleFileLoad = (content: string) => {
@@ -39,7 +37,6 @@ export default function Index() {
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar el archivo');
-      // No reseteamos data a defaultData aquí para mantener lo que el usuario pudo haber escrito
     }
   };
 
@@ -49,49 +46,46 @@ export default function Index() {
     handleFileLoad(content);
   };
 
-  // Función para manejar cambios manuales en la tabla DISC
+  const handleNameChange = (value: string) => {
+    setData(prev => ({
+      ...prev,
+      nombrePersona: value.trim() === '' ? 'Persona' : value
+    }));
+  };
+
   const handleDiscChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
-    setData(prevData => {
-      const newData = { ...prevData };
-      // Aseguramos que el valor sea positivo y no NaN
-      const sanitizedValue = isNaN(value) ? 0 : Math.max(0, value);
+    setData(prev => {
+      const next = { ...prev };
+      const v = isNaN(value) ? 0 : Math.max(0, value);
 
       if (type === 'persona') {
-        const newDiscPersona = [...newData.discPersona];
-        newDiscPersona[index] = sanitizedValue;
-        newData.discPersona = newDiscPersona;
+        const arr = [...next.discPersona];
+        arr[index] = v;
+        next.discPersona = arr;
       } else {
-        const newDiscIdeal = [...newData.discIdeal];
-        newDiscIdeal[index] = sanitizedValue;
-        newData.discIdeal = newDiscIdeal;
+        const arr = [...next.discIdeal];
+        arr[index] = v;
+        next.discIdeal = arr;
       }
-      // Si editamos manualmente, cambiamos el nombre si sigue siendo el default
-      if (newData.nombrePersona === 'Sin Datos') {
-         newData.nombrePersona = 'Perfil Manual';
-      }
-      return newData;
+      return next;
     });
   }, []);
 
-  // Función para manejar cambios manuales en la tabla VELNA
   const handleVelnaChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
-    setData(prevData => {
-      const newData = { ...prevData };
-      const sanitizedValue = isNaN(value) ? 0 : Math.max(0, value);
+    setData(prev => {
+      const next = { ...prev };
+      const v = isNaN(value) ? 0 : Math.max(0, value);
 
       if (type === 'persona') {
-        const newVelnaPersona = [...newData.velnaPersona];
-        newVelnaPersona[index] = sanitizedValue;
-        newData.velnaPersona = newVelnaPersona;
+        const arr = [...next.velnaPersona];
+        arr[index] = v;
+        next.velnaPersona = arr;
       } else {
-        const newVelnaIdeal = [...newData.velnaIdeal];
-        newVelnaIdeal[index] = sanitizedValue;
-        newData.velnaIdeal = newVelnaIdeal;
+        const arr = [...next.velnaIdeal];
+        arr[index] = v;
+        next.velnaIdeal = arr;
       }
-      if (newData.nombrePersona === 'Sin Datos') {
-         newData.nombrePersona = 'Perfil Manual';
-      }
-      return newData;
+      return next;
     });
   }, []);
 
@@ -113,12 +107,12 @@ export default function Index() {
 
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8 max-w-2xl mx-auto">
-          <FileDropZone 
-            onFileLoad={handleFileDrop} 
-            isLoaded={isFileLoaded} 
+          <FileDropZone
+            onFileLoad={handleFileDrop}
+            isLoaded={isFileLoaded}
             fileName={fileName}
           />
-          
+
           {error && (
             <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
@@ -128,11 +122,14 @@ export default function Index() {
         </section>
 
         <div className="space-y-8 animate-slide-up">
-          {/* Person Info - Siempre visible */}
           <div className="flex flex-col items-center justify-center gap-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
-              <Users className="h-4 w-4" />
-              <span className="font-medium">{data.nombrePersona}</span>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10">
+              <Users className="h-4 w-4 text-primary" />
+              <Input
+                value={data.nombrePersona}
+                onChange={e => handleNameChange(e.target.value)}
+                className="h-7 w-48 bg-transparent border-none text-center font-medium focus-visible:ring-0"
+              />
             </div>
 
             <div className="flex items-center gap-6 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
@@ -143,13 +140,12 @@ export default function Index() {
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-person))]" />
                 <span className="text-sm font-medium text-muted-foreground">
-                  {data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
+                  {data.nombrePersona}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Charts Grid - Siempre visible */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <ChartCard delay={100}>
               <div className="flex items-center gap-2 mb-4">
@@ -161,7 +157,7 @@ export default function Index() {
               <DISCRadarChart
                 personaData={data.discPersona}
                 idealData={data.discIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
+                personName={data.nombrePersona}
               />
             </ChartCard>
 
@@ -177,7 +173,7 @@ export default function Index() {
                 labels={velnaLabels}
                 personaData={data.velnaPersona}
                 idealData={data.velnaIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
+                personName={data.nombrePersona}
               />
             </ChartCard>
 
@@ -188,18 +184,16 @@ export default function Index() {
                 </div>
                 <span className="text-sm font-medium text-muted-foreground">Competencias Laborales</span>
               </div>
-              {/* Competencias no es editable manualmente por ahora */}
               <RadarChart
                 title="Competencias"
                 labels={data.compLabels}
                 personaData={data.compPersona}
                 idealData={data.compIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
+                personName={data.nombrePersona}
               />
             </ChartCard>
           </div>
 
-          {/* Tables Grid - Siempre visible y editables (DISC y VELNA) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <ChartCard delay={400}>
               <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle DISC</h4>
@@ -207,8 +201,8 @@ export default function Index() {
                 labels={discTableLabels}
                 personaData={data.discPersona}
                 idealData={data.discIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
-                editable={true}
+                personName={data.nombrePersona}
+                editable
                 onDataChange={handleDiscChange}
               />
             </ChartCard>
@@ -219,31 +213,29 @@ export default function Index() {
                 labels={velnaLabels}
                 personaData={data.velnaPersona}
                 idealData={data.velnaIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
-                editable={true}
+                personName={data.nombrePersona}
+                editable
                 onDataChange={handleVelnaChange}
               />
             </ChartCard>
 
             <ChartCard delay={600}>
               <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle Competencias</h4>
-              {/* Competencias no editable */}
               <DataTable
                 labels={data.compLabels}
                 personaData={data.compPersona}
                 idealData={data.compIdeal}
-                personName={data.nombrePersona === 'Sin Datos' ? 'Persona' : data.nombrePersona}
+                personName={data.nombrePersona}
                 editable={false}
               />
             </ChartCard>
           </div>
         </div>
 
-        {/* Empty State Footer - Solo si no se ha cargado archivo y no hay error */}
         {!isFileLoaded && !error && (
           <div className="text-center py-16 text-muted-foreground animate-slide-up">
             <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Puedes cargar un archivo CSV o ingresar datos manualmente en las tablas.</p>
+            <p className="text-lg">Puedes cargar un archivo CSV o ingresar datos manualmente.</p>
             <p className="text-sm mt-2">El archivo debe estar delimitado por punto y coma (;)</p>
           </div>
         )}
