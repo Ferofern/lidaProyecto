@@ -62,35 +62,20 @@ export function parseCSV(content: string): ProfileData {
 }
 
 export function calculateMatch(persona: number[], ideal: number[]): number {
-  if (
-    !Array.isArray(persona) ||
-    !Array.isArray(ideal) ||
-    persona.length === 0 ||
-    persona.length !== ideal.length
-  ) {
-    return 0;
-  }
+  if (!persona.length || !ideal.length) return 0;
 
-  let totalScore = 0;
+  const total = persona.reduce((acc, p, i) => {
+    const idealVal = ideal[i];
+    if (idealVal === 0) return acc + 1;
+    if (p >= idealVal) return acc + 1;
+    return acc + p / idealVal;
+  }, 0);
 
-  for (let i = 0; i < persona.length; i++) {
-    const p = persona[i];
-    const iVal = ideal[i];
-
-    if (iVal <= 0) {
-      totalScore += 1;
-    } else if (p >= iVal) {
-      totalScore += 1;
-    } else {
-      totalScore += p / iVal;
-    }
-  }
-
-  return Math.round((totalScore / persona.length) * 100);
+  return (total / persona.length) * 100;
 }
 
 export function getMatchColor(match: number): string {
-  if (match >= 85) return 'text-green-600';
-  if (match >= 60) return 'text-yellow-500';
-  return 'text-red-600';
+  if (match >= 80) return 'text-success';
+  if (match >= 60) return 'text-warning';
+  return 'text-destructive';
 }
