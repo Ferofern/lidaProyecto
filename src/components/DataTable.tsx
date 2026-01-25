@@ -66,13 +66,13 @@ export function DataTable({
                   {editable ? (
                     <Input
                       type="number"
-                      min={0}
+                      min="0"
                       value={persona}
                       onChange={(e) =>
                         onDataChange?.(
                           index,
                           'persona',
-                          Number(e.target.value)
+                          e.target.value === '' ? 0 : Number(e.target.value)
                         )
                       }
                       className="h-8 w-20 text-center mx-auto bg-secondary/10 border-secondary/20 focus-visible:ring-secondary"
@@ -88,13 +88,13 @@ export function DataTable({
                   {editable ? (
                     <Input
                       type="number"
-                      min={0}
+                      min="0"
                       value={ideal}
                       onChange={(e) =>
                         onDataChange?.(
                           index,
                           'ideal',
-                          Number(e.target.value)
+                          e.target.value === '' ? 0 : Number(e.target.value)
                         )
                       }
                       className="h-8 w-20 text-center mx-auto bg-primary/10 border-primary/20 focus-visible:ring-primary"
