@@ -23,7 +23,7 @@ const discLabels = [
 ];
 
 const DecorativeLabels = () => (
-  <g>
+  <g pointerEvents="none">
     <text x="50%" y="25" textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">Proactividad</text>
     <text x="95%" y="50%" textAnchor="end" dominantBaseline="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="bold">
       <tspan x="98%" dy="-6">Tendencia a</tspan>
@@ -37,61 +37,61 @@ const DecorativeLabels = () => (
   </g>
 );
 
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  
-  if (!cx || !cy || !payload) return null;
-
-  const persona = Number(payload.persona || 0);
-  const ideal = Number(payload.ideal || 0);
-  const diff = Math.abs(persona - ideal);
-  
-  const isGood = persona >= ideal;
-  const color = isGood ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)'; 
-
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />
-      <text
-        x={cx}
-        y={cy - 12}
-        fill={color}
-        fontSize={12}
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="auto"
-        stroke="hsl(var(--background))"
-        strokeWidth={3}
-        paintOrder="stroke"
-      >
-        {diff.toFixed(1)}
-      </text>
-      <text
-        x={cx}
-        y={cy - 12}
-        fill={color}
-        fontSize={12}
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="auto"
-      >
-        {diff.toFixed(1)}
-      </text>
-    </g>
-  );
-};
-
 export function DISCRadarChart({ personaData, idealData, personName }: DISCRadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
 
+  // Mapeo seguro: asegura que persona e ideal sean números
   const data = discLabels.map((label, index) => ({
     subject: label.key,
     fullName: label.name,
     description: label.desc,
-    persona: Number(personaData[index] || 0),
-    ideal: Number(idealData[index] || 0),
+    persona: Number(personaData?.[index] ?? 0),
+    ideal: Number(idealData?.[index] ?? 0),
   }));
+
+  // Función Dot Inline
+  const renderDISCDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (!cx || !cy || !payload) return null;
+
+    const pVal = Number(payload.persona);
+    const iVal = Number(payload.ideal);
+    const diff = Math.abs(pVal - iVal);
+
+    // Lógica condicional: Verde si Persona >= Ideal, Rojo si no
+    const isSuccess = pVal >= iVal;
+    const fillColor = isSuccess ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)';
+
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={6} fill={fillColor} stroke="white" strokeWidth={2} />
+        <text
+          x={cx}
+          y={cy - 12}
+          textAnchor="middle"
+          stroke="white"
+          strokeWidth={3}
+          paintOrder="stroke"
+          fill={fillColor}
+          fontSize={12}
+          fontWeight="900"
+        >
+          {diff.toFixed(1)}
+        </text>
+        <text
+          x={cx}
+          y={cy - 12}
+          textAnchor="middle"
+          fill={fillColor}
+          fontSize={12}
+          fontWeight="900"
+        >
+          {diff.toFixed(1)}
+        </text>
+      </g>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,6 +114,8 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;
+                
+                // Ajuste fino de posiciones para las letras D, I, S, C
                 if (payload.value === 'D') { textAnchor = 'end'; dx = -15; dy = -10; }
                 if (payload.value === 'I') { textAnchor = 'start'; dx = 15; dy = -10; }
                 if (payload.value === 'S') { textAnchor = 'start'; dx = 15; dy = 20; }
@@ -128,6 +130,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               }}
             />
 
+            {/* Radar Ideal con el Dot personalizado */}
             <Radar
               name="Perfil Ideal"
               dataKey="ideal"
@@ -135,7 +138,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               fill="hsl(var(--chart-ideal))"
               fillOpacity={0.2}
               strokeWidth={2}
-              dot={<CustomDot />}
+              dot={renderDISCDot}
             />
 
             <Radar
