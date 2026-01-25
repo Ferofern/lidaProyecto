@@ -37,15 +37,15 @@ export function parseCSV(content: string): ProfileData {
   const velnaPersona = [12, 13, 14, 15, 16].map(i => Number(personRow[i]) || 0);
   const velnaIdeal = [36, 37, 38, 39, 40].map(i => Number(personRow[i]) || 0);
 
-  const compLabels = [24, 25, 26, 27, 28, 29].map(
+  const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
     i => headerRow[i] || `Comp ${i - 23}`
   );
 
-  const compIdeal = [24, 25, 26, 27, 28, 29].map(
+  const compIdeal = [24, 25, 26, 27, 28, 29, 30].map(
     i => extractNumber(idealRow[i] || '0')
   );
 
-  const compPersona = [24, 25, 26, 27, 28, 29].map(
+  const compPersona = [24, 25, 26, 27, 28, 29, 30].map(
     i => Number(personRow[i]) || 0
   );
 
