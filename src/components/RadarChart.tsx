@@ -33,9 +33,49 @@ const competenciaColors = [
   '#06b6d4',
 ];
 
+// Componente Dot aislado para garantizar acceso al payload completo
+const CustomDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  
+  // Validación estricta: si no hay coordenadas o payload, no dibujar
+  if (!cx || !cy || !payload) return null;
+
+  // Extracción directa de valores
+  const pVal = Number(payload.persona || 0);
+  const iVal = Number(payload.ideal || 0);
+  
+  // Cálculo de diferencia
+  const diff = Math.abs(pVal - iVal).toFixed(1);
+  
+  // Lógica de color
+  const isSuccess = pVal >= iVal;
+  const color = isSuccess ? '#16a34a' : '#dc2626'; // Green-600 vs Red-600
+
+  return (
+    <g>
+      {/* Círculo de fondo para tapar la línea */}
+      <circle cx={cx} cy={cy} r={8} fill="white" stroke={color} strokeWidth={2} />
+      
+      {/* Texto centrado */}
+      <text
+        x={cx}
+        y={cy}
+        dy={4} // Ajuste fino vertical para centrar el texto
+        textAnchor="middle"
+        fill={color}
+        fontSize={10}
+        fontWeight="900"
+      >
+        {diff}
+      </text>
+    </g>
+  );
+};
+
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
+
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
@@ -45,58 +85,13 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
     return '#94a3b8';
   };
 
-  const data = labels.map((label, index) => {
-    const p = Number(personaData?.[index] ?? 0);
-    const i = Number(idealData?.[index] ?? 0);
-    
-    return {
-      subject: label,
-      persona: isNaN(p) ? 0 : p,
-      ideal: isNaN(i) ? 0 : i,
-      color: getColor(label, index),
-    };
-  });
-
-  const renderDot = (props: any) => {
-    const { cx, cy, payload } = props;
-    if (!cx || !cy || !payload) return null;
-
-    const p = Number(payload.persona);
-    const i = Number(payload.ideal);
-    const diff = Math.abs(p - i).toFixed(1);
-    const isSuccess = p >= i;
-    
-    const color = isSuccess ? '#16a34a' : '#dc2626';
-
-    return (
-      <g>
-        <circle cx={cx} cy={cy} r={6} fill={color} stroke="white" strokeWidth={2} />
-        <text
-          x={cx}
-          y={cy - 15}
-          textAnchor="middle"
-          stroke="white"
-          strokeWidth={3}
-          paintOrder="stroke"
-          fill={color}
-          fontSize={12}
-          fontWeight="bold"
-        >
-          {diff}
-        </text>
-        <text
-          x={cx}
-          y={cy - 15}
-          textAnchor="middle"
-          fill={color}
-          fontSize={12}
-          fontWeight="bold"
-        >
-          {diff}
-        </text>
-      </g>
-    );
-  };
+  // Construcción de datos limpia
+  const data = labels.map((label, index) => ({
+    subject: label,
+    persona: Number(personaData?.[index] ?? 0),
+    ideal: Number(idealData?.[index] ?? 0),
+    color: getColor(label, index),
+  }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -140,6 +135,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             }}
           />
 
+          {/* El Radar Ideal lleva el CustomDot */}
           <Radar
             name="Ideal"
             dataKey="ideal"
@@ -147,7 +143,7 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
             fill="#94a3b8"
             fillOpacity={0.2}
             strokeWidth={2}
-            dot={renderDot}
+            dot={<CustomDot />} 
           />
 
           <Radar
