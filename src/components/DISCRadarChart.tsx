@@ -16,10 +16,10 @@ interface DISCRadarChartProps {
 }
 
 const discLabels = [
-  { key: 'D', name: 'Dominante', color: '#ef4444', desc: 'Directo, firme' },
-  { key: 'I', name: 'Influyente', color: '#eab308', desc: 'Extrovertido, negociador' },
-  { key: 'S', name: 'Sólido', color: '#84cc16', desc: 'Sereno, paciente' },
-  { key: 'C', name: 'Cumplido', color: '#3b82f6', desc: 'Analítico, prudente' },
+  { key: 'D', name: 'Dominante', color: 'hsl(0, 95%, 45%)', desc: 'Directo, firme' },
+  { key: 'I', name: 'Influyente', color: 'hsl(35, 95%, 55%)', desc: 'Extrovertido, negociador' },
+  { key: 'S', name: 'Sólido', color: 'hsl(85, 70%, 45%)', desc: 'Sereno, paciente' },
+  { key: 'C', name: 'Cumplido', color: 'hsl(205, 100%, 35%)', desc: 'Analítico, prudente' },
 ];
 
 const DecorativeLabels = () => (
@@ -43,15 +43,27 @@ const CustomDot = (props: any) => {
 
   return (
     <g>
-      <circle cx={cx} cy={cy} r={8} fill="white" stroke={payload.dotColor} strokeWidth={2} />
+      <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
       <text
         x={cx}
-        y={cy}
-        dy={3}
+        y={cy - 10} 
         textAnchor="middle"
-        fill={payload.dotColor}
-        fontSize={10}
-        fontWeight="900"
+        stroke="white"
+        strokeWidth={3}
+        paintOrder="stroke"
+        fill={payload.diffColor}
+        fontSize={12}
+        fontWeight="800"
+      >
+        {payload.diffLabel}
+      </text>
+      <text
+        x={cx}
+        y={cy - 10}
+        textAnchor="middle"
+        fill={payload.diffColor}
+        fontSize={12}
+        fontWeight="800"
       >
         {payload.diffLabel}
       </text>
@@ -68,7 +80,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
     const i = Number(idealData?.[index] ?? 0);
     const diff = Math.abs(p - i).toFixed(1);
     const isSuccess = p >= i;
-    
+
     return {
       subject: label.key,
       fullName: label.name,
@@ -76,7 +88,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
       persona: p,
       ideal: i,
       diffLabel: diff,
-      dotColor: isSuccess ? '#16a34a' : '#dc2626'
+      diffColor: isSuccess ? '#16a34a' : '#ef4444' 
     };
   });
 
@@ -98,6 +110,7 @@ export function DISCRadarChart({ personaData, idealData, personName }: DISCRadar
               dataKey="subject"
               tick={({ x, y, payload }) => {
                 const label = discLabels.find(l => l.key === payload.value);
+                
                 let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                 let dx = 0;
                 let dy = 0;

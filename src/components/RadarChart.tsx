@@ -17,20 +17,20 @@ interface RadarChartProps {
 }
 
 const velnaColors: Record<string, string> = {
-  Verbal: '#9333ea',
-  Espacial: '#0ea5e9',
-  Lógico: '#f59e0b',
-  Numérico: '#10b981',
-  Abstracto: '#ec4899',
+  Verbal: 'hsl(280, 70%, 50%)',
+  Espacial: 'hsl(200, 80%, 50%)',
+  Lógico: 'hsl(35, 90%, 50%)',
+  Numérico: 'hsl(150, 70%, 40%)',
+  Abstracto: 'hsl(340, 75%, 55%)',
 };
 
 const competenciaColors = [
-  '#3b82f6',
-  '#14b8a6',
-  '#f97316',
-  '#a855f7',
-  '#ef4444',
-  '#06b6d4',
+  'hsl(220, 80%, 55%)',
+  'hsl(160, 70%, 45%)',
+  'hsl(30, 85%, 55%)',
+  'hsl(280, 65%, 55%)',
+  'hsl(350, 75%, 55%)',
+  'hsl(180, 70%, 45%)',
 ];
 
 const CustomDot = (props: any) => {
@@ -39,15 +39,27 @@ const CustomDot = (props: any) => {
 
   return (
     <g>
-      <circle cx={cx} cy={cy} r={8} fill="white" stroke={payload.dotColor} strokeWidth={2} />
+      <circle cx={cx} cy={cy} r={4} fill="white" stroke={payload.diffColor} strokeWidth={2} />
       <text
         x={cx}
-        y={cy}
-        dy={3}
+        y={cy - 8}
         textAnchor="middle"
-        fill={payload.dotColor}
-        fontSize={10}
-        fontWeight="900"
+        fill={payload.diffColor}
+        fontSize={11}
+        fontWeight="800"
+        stroke="white"
+        strokeWidth={3}
+        paintOrder="stroke"
+      >
+        {payload.diffLabel}
+      </text>
+      <text
+        x={cx}
+        y={cy - 8}
+        textAnchor="middle"
+        fill={payload.diffColor}
+        fontSize={11}
+        fontWeight="800"
       >
         {payload.diffLabel}
       </text>
@@ -58,13 +70,14 @@ const CustomDot = (props: any) => {
 export function RadarChart({ title, labels, personaData, idealData, personName }: RadarChartProps) {
   const match = calculateMatch(personaData, idealData);
   const matchColor = getMatchColor(match);
+
   const isVelna = title === 'VELNA';
   const isCompetencias = title === 'Competencias';
 
   const getColor = (label: string, index: number) => {
-    if (isVelna) return velnaColors[label] || '#94a3b8';
+    if (isVelna) return velnaColors[label] || 'hsl(var(--muted-foreground))';
     if (isCompetencias) return competenciaColors[index % competenciaColors.length];
-    return '#94a3b8';
+    return 'hsl(var(--muted-foreground))';
   };
 
   const data = labels.map((label, index) => {
@@ -77,9 +90,8 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
       subject: label,
       persona: p,
       ideal: i,
-      color: getColor(label, index),
       diffLabel: diff,
-      dotColor: isSuccess ? '#16a34a' : '#dc2626'
+      diffColor: isSuccess ? '#16a34a' : '#ef4444', 
     };
   });
 
@@ -100,12 +112,12 @@ export function RadarChart({ title, labels, personaData, idealData, personName }
               const dx = x - cx;
               const dy = y - cy;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              const offset = 30;
+              const offset = 20;
               const nx = cx + (dx / distance) * (distance + offset);
               const ny = cy + (dy / distance) * (distance + offset);
               const words = payload.value.split(' ');
               const mid = Math.ceil(words.length / 2);
-
+              
               return (
                 <text
                   x={nx}
