@@ -27,56 +27,72 @@ function extractNumber(value: any): number {
   return match ? parseFloat(match[0]) : 0;
 }
 
-export function parseFile(data: ArrayBuffer | string): ProfileData {
+// ✅ Ahora devuelve un Array de ProfileData
+export function parseFile(data: ArrayBuffer | string): ProfileData[] {
   const workbook = XLSX.read(data, { type: typeof data === 'string' ? 'string' : 'array' });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
+  // defval: '' asegura que si la celda está vacía, no rompa el array
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
 
   if (rows.length < 3) {
-    throw new Error('El archivo debe tener al menos 3 filas');
+    throw new Error('El archivo debe tener al menos 3 filas (Encabezados, Ideal, Personas)');
   }
 
   const headerRow = rows[0];
-  const idealRow = rows[1];
-  const personRow = rows[2];
+  const idealRow = rows[1]; // El perfil ideal está en la fila 1 (siempre fijo)
 
-  const nombrePersona = personRow[1] || 'Persona';
+  // Las personas empiezan desde la fila 2 hacia abajo
+  const peopleRows = rows.slice(2);
 
-  const discPersona = [8, 9, 10, 11].map(i => extractNumber(personRow[i]));
-  const discIdeal = [31, 32, 33, 34].map(i => extractNumber(personRow[i]));
+  const profiles: ProfileData[] = [];
 
-  const velnaPersona = [12, 13, 14, 15, 16].map(i => extractNumber(personRow[i]));
-  const velnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(personRow[i]));
+  peopleRows.forEach((personRow) => {
+    // Validación simple: Si no hay nombre en la columna 1, probablemente es una fila vacía
+    const nombrePersona = personRow[1];
+    if (!nombrePersona) return; 
 
-  const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
-    i => String(headerRow[i] || `Comp ${i - 23}`)
-  );
+    const discPersona = [8, 9, 10, 11].map(i => extractNumber(personRow[i]));
+    const discIdeal = [31, 32, 33, 34].map(i => extractNumber(personRow[i])); // ¿El ideal varía por fila? Asumimos que sí según tu lógica original
 
-  const compIdeal = [24, 25, 26, 27, 28, 29, 30].map(
-    i => extractNumber(idealRow[i])
-  );
+    const velnaPersona = [12, 13, 14, 15, 16].map(i => extractNumber(personRow[i]));
+    const velnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(personRow[i]));
 
-  const compPersona = [24, 25, 26, 27, 28, 29, 30].map(
-    i => extractNumber(personRow[i])
-  );
+    const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
+      i => String(headerRow[i] || `Comp ${i - 23}`)
+    );
 
-  const discMatch = extractNumber(personRow[20]);
-  const velnaMatch = extractNumber(personRow[21]);
+    const compIdeal = [24, 25, 26, 27, 28, 29, 30].map(
+      i => extractNumber(idealRow[i])
+    );
 
-  return {
-    nombrePersona,
-    discPersona,
-    discIdeal,
-    velnaPersona,
-    velnaIdeal,
-    compLabels,
-    compPersona,
-    compIdeal,
-    discMatch,
-    velnaMatch,
-  };
+    const compPersona = [24, 25, 26, 27, 28, 29, 30].map(
+      i => extractNumber(personRow[i])
+    );
+
+    const discMatch = extractNumber(personRow[20]);
+    const velnaMatch = extractNumber(personRow[21]);
+
+    profiles.push({
+      nombrePersona: String(nombrePersona),
+      discPersona,
+      discIdeal,
+      velnaPersona,
+      velnaIdeal,
+      compLabels,
+      compPersona,
+      compIdeal,
+      discMatch,
+      velnaMatch,
+    });
+  });
+
+  if (profiles.length === 0) {
+    throw new Error('No se encontraron perfiles válidos a partir de la fila 3');
+  }
+
+  return profiles;
 }
 
 export function calculateMatch(persona: number[], ideal: number[]): number {

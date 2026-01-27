@@ -5,14 +5,18 @@ import { DISCRadarChart } from '@/components/DISCRadarChart';
 import { DataTable } from '@/components/DataTable';
 import { ChartCard } from '@/components/ChartCard';
 import { parseFile, ProfileData } from '@/lib/csvParser';
-import { BarChart3, Users, Brain, Target, AlertCircle } from 'lucide-react';
+import { 
+  BarChart3, Users, Brain, Target, AlertCircle, 
+  ChevronLeft, ChevronRight, Briefcase, UserCog 
+} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button'; // Asumiendo que tienes este componente, si no usa HTML button normal
 
 const velnaLabels = ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto'];
 const discTableLabels = ['D - Dominante', 'I - Influyente', 'S - Sólido', 'C - Cumplido'];
 
-const defaultData: ProfileData = {
+const defaultProfile: ProfileData = {
   nombrePersona: 'Persona',
   discPersona: [0, 0, 0, 0],
   discIdeal: [0, 0, 0, 0],
@@ -25,11 +29,20 @@ const defaultData: ProfileData = {
   velnaMatch: 0
 };
 
+type RoleType = 'Jefe' | 'Gerente';
+
 export default function Index() {
-  const [data, setData] = useState<ProfileData>(defaultData);
+  // ✅ Estado ahora maneja un array de perfiles
+  const [profiles, setProfiles] = useState<ProfileData[]>([defaultProfile]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [role, setRole] = useState<RoleType>('Jefe'); // ✅ Nuevo switch de rol
+  
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isFileLoaded, setIsFileLoaded] = useState(false);
+
+  // Obtener el perfil actual basado en el índice
+  const currentData = profiles[currentIndex];
 
   const processFile = (file: File) => {
     const reader = new FileReader();
@@ -39,11 +52,15 @@ export default function Index() {
         const buffer = e.target?.result;
         if (!buffer) return;
         
-        const parsed = parseFile(buffer as ArrayBuffer);
-        setData(parsed);
-        setIsFileLoaded(true);
-        setError('');
-        setFileName(file.name);
+        const parsedProfiles = parseFile(buffer as ArrayBuffer);
+        
+        if (parsedProfiles.length > 0) {
+          setProfiles(parsedProfiles);
+          setCurrentIndex(0); // Resetear al primero
+          setIsFileLoaded(true);
+          setError('');
+          setFileName(file.name);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al procesar el archivo');
       }
@@ -60,60 +77,109 @@ export default function Index() {
     processFile(file);
   };
 
+  // ✅ Funciones de navegación
+  const nextProfile = () => {
+    if (currentIndex < profiles.length - 1) setCurrentIndex(prev => prev + 1);
+  };
+
+  const prevProfile = () => {
+    if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
+  };
+
+  // ✅ Actualizadores de estado (ahora modifican el array)
+  const updateCurrentProfile = (updater: (profile: ProfileData) => ProfileData) => {
+    setProfiles(prev => {
+      const newProfiles = [...prev];
+      newProfiles[currentIndex] = updater(newProfiles[currentIndex]);
+      return newProfiles;
+    });
+  };
+
   const handleNameChange = (value: string) => {
-    setData(prev => ({
-      ...prev,
-      nombrePersona: value.trim() === '' ? 'Persona' : value
-    }));
+    updateCurrentProfile(p => ({ ...p, nombrePersona: value }));
   };
 
   const handleDiscChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
-    setData(prev => {
-      const next = { ...prev };
+    setProfiles(prevProfiles => {
+      const newProfiles = [...prevProfiles];
+      const current = { ...newProfiles[currentIndex] }; // Copia del perfil actual
       const v = isNaN(value) ? 0 : Math.max(0, value);
 
       if (type === 'persona') {
-        const arr = [...next.discPersona];
+        const arr = [...current.discPersona];
         arr[index] = v;
-        next.discPersona = arr;
+        current.discPersona = arr;
       } else {
-        const arr = [...next.discIdeal];
+        const arr = [...current.discIdeal];
         arr[index] = v;
-        next.discIdeal = arr;
+        current.discIdeal = arr;
       }
-      return next;
+      
+      newProfiles[currentIndex] = current;
+      return newProfiles;
     });
-  }, []);
+  }, [currentIndex]); // Dependencia clave: currentIndex
 
   const handleVelnaChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
-    setData(prev => {
-      const next = { ...prev };
+    setProfiles(prevProfiles => {
+      const newProfiles = [...prevProfiles];
+      const current = { ...newProfiles[currentIndex] };
       const v = isNaN(value) ? 0 : Math.max(0, value);
 
       if (type === 'persona') {
-        const arr = [...next.velnaPersona];
+        const arr = [...current.velnaPersona];
         arr[index] = v;
-        next.velnaPersona = arr;
+        current.velnaPersona = arr;
       } else {
-        const arr = [...next.velnaIdeal];
+        const arr = [...current.velnaIdeal];
         arr[index] = v;
-        next.velnaIdeal = arr;
+        current.velnaIdeal = arr;
       }
-      return next;
+
+      newProfiles[currentIndex] = current;
+      return newProfiles;
     });
-  }, []);
+  }, [currentIndex]);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="gradient-primary rounded-xl p-2">
-              <BarChart3 className="h-6 w-6 text-primary-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="gradient-primary rounded-xl p-2">
+                <BarChart3 className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">Matrix Profile Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Análisis {role} - DISC, VELNA y Competencias</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Matrix Profile Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Análisis DISC, VELNA y Competencias</p>
+
+            {/* ✅ SWITCH DE ROL (Jefe / Gerente) */}
+            <div className="flex bg-secondary/30 p-1 rounded-lg">
+              <button
+                onClick={() => setRole('Jefe')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  role === 'Jefe' 
+                    ? 'bg-background shadow-sm text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <UserCog className="h-4 w-4" />
+                Jefe
+              </button>
+              <button
+                onClick={() => setRole('Gerente')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  role === 'Gerente' 
+                    ? 'bg-background shadow-sm text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Briefcase className="h-4 w-4" />
+                Gerente
+              </button>
             </div>
           </div>
         </div>
@@ -122,7 +188,7 @@ export default function Index() {
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8 max-w-2xl mx-auto">
           <FileDropZone
-            onFileLoad={handleFileDrop} 
+            onFileLoad={handleFileDrop}
             isLoaded={isFileLoaded}
             fileName={fileName}
           />
@@ -135,44 +201,81 @@ export default function Index() {
           )}
         </section>
 
-        <div className="space-y-8 animate-slide-up">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10">
-              <Users className="h-4 w-4 text-primary" />
-              <Input
-                value={data.nombrePersona}
-                onChange={e => handleNameChange(e.target.value)}
-                className="h-7 w-48 bg-transparent border-none text-center font-medium focus-visible:ring-0"
-              />
+        {/* ✅ CINTA DE NAVEGACIÓN DE EMPLEADOS */}
+        {isFileLoaded && (
+          <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4 bg-card border border-border p-4 rounded-xl shadow-sm animate-slide-up">
+            
+            <div className="flex items-center gap-4 w-full md:w-auto justify-center">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={prevProfile}
+                disabled={currentIndex === 0}
+                className="h-10 w-10"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+
+              <div className="flex flex-col items-center min-w-[200px]">
+                <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                  Empleado {currentIndex + 1} de {profiles.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <Input
+                    value={currentData.nombrePersona}
+                    onChange={e => handleNameChange(e.target.value)}
+                    className="h-8 w-48 bg-transparent border-none text-center font-bold text-lg focus-visible:ring-0 px-0"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={nextProfile}
+                disabled={currentIndex === profiles.length - 1}
+                className="h-10 w-10"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
             </div>
 
-            <div className="flex items-center gap-6 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
+            <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-secondary/10 border border-secondary/20">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-ideal))]" />
                 <span className="text-sm font-medium text-muted-foreground">Perfil Ideal</span>
               </div>
+              <div className="h-4 w-px bg-border"></div>
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-person))]" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  {data.nombrePersona}
+                <span className="text-sm font-medium text-foreground">
+                  {currentData.nombrePersona}
                 </span>
               </div>
             </div>
           </div>
+        )}
 
+        <div className="space-y-8 animate-slide-up">
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <ChartCard delay={100}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="rounded-lg bg-disc-dominant/10 p-2">
                   <Target className="h-5 w-5" style={{ color: 'hsl(0, 95%, 45%)' }} />
                 </div>
-                <span className="text-sm font-medium text-muted-foreground">Perfil de Conducta</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
+                  {/* Etiqueta opcional para saber qué rol estamos viendo */}
+                  <span className="text-[10px] text-primary font-bold uppercase">{role}</span>
+                </div>
               </div>
               <DISCRadarChart
-                personaData={data.discPersona}
-                idealData={data.discIdeal}
-                personName={data.nombrePersona}
-                matchScore={data.discMatch}
+                personaData={currentData.discPersona}
+                idealData={currentData.discIdeal}
+                personName={currentData.nombrePersona}
+                matchScore={currentData.discMatch}
               />
             </ChartCard>
 
@@ -186,10 +289,10 @@ export default function Index() {
               <RadarChart
                 title="VELNA"
                 labels={velnaLabels}
-                personaData={data.velnaPersona}
-                idealData={data.velnaIdeal}
-                personName={data.nombrePersona}
-                matchScore={data.velnaMatch}
+                personaData={currentData.velnaPersona}
+                idealData={currentData.velnaIdeal}
+                personName={currentData.nombrePersona}
+                matchScore={currentData.velnaMatch}
               />
             </ChartCard>
 
@@ -202,22 +305,23 @@ export default function Index() {
               </div>
               <RadarChart
                 title="Competencias"
-                labels={data.compLabels}
-                personaData={data.compPersona}
-                idealData={data.compIdeal}
-                personName={data.nombrePersona}
+                labels={currentData.compLabels}
+                personaData={currentData.compPersona}
+                idealData={currentData.compIdeal}
+                personName={currentData.nombrePersona}
               />
             </ChartCard>
           </div>
 
+          {/* Tablas de Datos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <ChartCard delay={400}>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle DISC</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle DISC ({role})</h4>
               <DataTable
                 labels={discTableLabels}
-                personaData={data.discPersona}
-                idealData={data.discIdeal}
-                personName={data.nombrePersona}
+                personaData={currentData.discPersona}
+                idealData={currentData.discIdeal}
+                personName={currentData.nombrePersona}
                 editable
                 onDataChange={handleDiscChange}
               />
@@ -227,9 +331,9 @@ export default function Index() {
               <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle VELNA</h4>
               <DataTable
                 labels={velnaLabels}
-                personaData={data.velnaPersona}
-                idealData={data.velnaIdeal}
-                personName={data.nombrePersona}
+                personaData={currentData.velnaPersona}
+                idealData={currentData.velnaIdeal}
+                personName={currentData.nombrePersona}
                 editable
                 onDataChange={handleVelnaChange}
               />
@@ -238,10 +342,10 @@ export default function Index() {
             <ChartCard delay={600}>
               <h4 className="text-sm font-semibold text-muted-foreground mb-4">Detalle Competencias</h4>
               <DataTable
-                labels={data.compLabels}
-                personaData={data.compPersona}
-                idealData={data.compIdeal}
-                personName={data.nombrePersona}
+                labels={currentData.compLabels}
+                personaData={currentData.compPersona}
+                idealData={currentData.compIdeal}
+                personName={currentData.nombrePersona}
                 editable={false}
               />
             </ChartCard>
@@ -251,8 +355,8 @@ export default function Index() {
         {!isFileLoaded && !error && (
           <div className="text-center py-16 text-muted-foreground animate-slide-up">
             <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Puedes cargar un archivo Excel (.xlsx) o CSV.</p>
-            <p className="text-sm mt-2">El sistema detectará automáticamente las columnas y filas.</p>
+            <p className="text-lg">Carga un archivo Excel (.xlsx) o CSV.</p>
+            <p className="text-sm mt-2">El sistema procesará automáticamente a todos los empleados (Jefes o Gerentes).</p>
           </div>
         )}
       </main>
