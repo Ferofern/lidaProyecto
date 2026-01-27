@@ -4,7 +4,7 @@ import { RadarChart } from '@/components/RadarChart';
 import { DISCRadarChart } from '@/components/DISCRadarChart';
 import { DataTable } from '@/components/DataTable';
 import { ChartCard } from '@/components/ChartCard';
-import { parseCSV, ProfileData } from '@/lib/csvParser';
+import { parseFile, ProfileData } from '@/lib/csvParser';
 import { BarChart3, Users, Brain, Target, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ const defaultData: ProfileData = {
   compLabels: [],
   compPersona: [],
   compIdeal: [],
-  // ✅ Inicializamos los matches en 0
   discMatch: 0,
   velnaMatch: 0
 };
@@ -32,21 +31,33 @@ export default function Index() {
   const [error, setError] = useState<string>('');
   const [isFileLoaded, setIsFileLoaded] = useState(false);
 
-  const handleFileLoad = (content: string) => {
-    try {
-      const parsed = parseCSV(content);
-      setData(parsed);
-      setIsFileLoaded(true);
-      setError('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al procesar el archivo');
-    }
+  const processFile = (file: File) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const buffer = e.target?.result;
+        if (!buffer) return;
+        
+        const parsed = parseFile(buffer as ArrayBuffer);
+        setData(parsed);
+        setIsFileLoaded(true);
+        setError('');
+        setFileName(file.name);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al procesar el archivo');
+      }
+    };
+
+    reader.onerror = () => {
+      setError('Error al leer el archivo');
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
-  const handleFileDrop = (content: string) => {
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    setFileName(input?.files?.[0]?.name || 'archivo.csv');
-    handleFileLoad(content);
+  const handleFileDrop = (file: File) => {
+    processFile(file);
   };
 
   const handleNameChange = (value: string) => {
@@ -111,7 +122,7 @@ export default function Index() {
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8 max-w-2xl mx-auto">
           <FileDropZone
-            onFileLoad={handleFileDrop}
+            onFileLoad={handleFileDrop} 
             isLoaded={isFileLoaded}
             fileName={fileName}
           />
@@ -155,13 +166,12 @@ export default function Index() {
                 <div className="rounded-lg bg-disc-dominant/10 p-2">
                   <Target className="h-5 w-5" style={{ color: 'hsl(0, 95%, 45%)' }} />
                 </div>
-                <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
+                <span className="text-sm font-medium text-muted-foreground">Perfil de Conducta</span>
               </div>
               <DISCRadarChart
                 personaData={data.discPersona}
                 idealData={data.discIdeal}
                 personName={data.nombrePersona}
-                // ✅ Pasamos el match real del CSV
                 matchScore={data.discMatch}
               />
             </ChartCard>
@@ -179,7 +189,6 @@ export default function Index() {
                 personaData={data.velnaPersona}
                 idealData={data.velnaIdeal}
                 personName={data.nombrePersona}
-                // ✅ Pasamos el match real del CSV
                 matchScore={data.velnaMatch}
               />
             </ChartCard>
@@ -197,7 +206,6 @@ export default function Index() {
                 personaData={data.compPersona}
                 idealData={data.compIdeal}
                 personName={data.nombrePersona}
-                // ✅ NO pasamos matchScore aquí, para que calcule el automático
               />
             </ChartCard>
           </div>
@@ -243,8 +251,8 @@ export default function Index() {
         {!isFileLoaded && !error && (
           <div className="text-center py-16 text-muted-foreground animate-slide-up">
             <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Puedes cargar un archivo CSV o ingresar datos manualmente.</p>
-            <p className="text-sm mt-2">El archivo debe estar delimitado por punto y coma (;)</p>
+            <p className="text-lg">Puedes cargar un archivo Excel (.xlsx) o CSV.</p>
+            <p className="text-sm mt-2">El sistema detectará automáticamente las columnas y filas.</p>
           </div>
         )}
       </main>
