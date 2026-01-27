@@ -17,80 +17,97 @@ function extractNumber(value: any): number {
   if (typeof value === 'number') return value;
   if (!value) return 0;
   const text = String(value);
-  const match = text.match(/\d+(\.\d+)?/);
   
+  // Busca números decimales o enteros
+  const match = text.match(/-?\d+(\.\d+)?/);
+  
+  // Manejo de decimales con coma (ej: "80,5")
   if (!match && text.includes(',')) {
     const normalized = text.replace(',', '.');
-    const matchComma = normalized.match(/\d+(\.\d+)?/);
+    const matchComma = normalized.match(/-?\d+(\.\d+)?/);
     return matchComma ? parseFloat(matchComma[0]) : 0;
   }
   return match ? parseFloat(match[0]) : 0;
 }
 
-// ✅ Ahora devuelve un Array de ProfileData
 export function parseFile(data: ArrayBuffer | string): ProfileData[] {
   const workbook = XLSX.read(data, { type: typeof data === 'string' ? 'string' : 'array' });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // defval: '' asegura que si la celda está vacía, no rompa el array
+  // Leemos todo como una matriz de arrays
+  // defval: '' evita errores con celdas vacías
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
 
   if (rows.length < 3) {
     throw new Error('El archivo debe tener al menos 3 filas (Encabezados, Ideal, Personas)');
   }
 
-  const headerRow = rows[0];
-  const idealRow = rows[1]; // ✅ El perfil ideal está FIJO en la fila 1 (índice 1)
-
-  // --- EXTRACCIÓN DE DATOS IDEALES (FIJOS) ---
-  // Estos valores son constantes para todos los empleados en este archivo
+  // --- DEFINICIÓN DE FILAS CLAVE ---
+  const headerRow = rows[0]; // Fila 1 (Encabezados)
+  const idealRow = rows[1];  // Fila 2 (SIEMPRE contiene los PERFILES IDEALES)
+  
+  // --- EXTRACCIÓN DE IDEALES (FIJOS PARA TODOS) ---
+  // DISC Ideal: Columnas 31, 32, 33, 34 de la Fila 2
   const fixedDiscIdeal = [31, 32, 33, 34].map(i => extractNumber(idealRow[i]));
+
+  // VELNA Ideal: Columnas 36, 37, 38, 39, 40 de la Fila 2
   const fixedVelnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(idealRow[i]));
+
+  // Competencias Ideal: Asumimos que siguen en 24-30 de la Fila 2
   const fixedCompIdeal = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(idealRow[i]));
 
-  // Las personas empiezan desde la fila 2 hacia abajo
+  // Etiquetas de Competencias (Fila 1)
+  const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
+    i => String(headerRow[i] || `Comp ${i - 23}`)
+  );
+
+  // --- PROCESAMIENTO DE EMPLEADOS ---
+  // Los empleados empiezan desde la Fila 3 (índice 2) hacia abajo
   const peopleRows = rows.slice(2);
   const profiles: ProfileData[] = [];
 
   peopleRows.forEach((personRow) => {
-    // Validación simple: Si no hay nombre en la columna 1, probablemente es una fila vacía
     const nombrePersona = personRow[1];
+    
+    // Si no hay nombre, saltamos la fila (puede estar vacía)
     if (!nombrePersona) return; 
 
-    // Datos Específicos de la Persona
+    // Datos DISC Persona (Cols 8-11)
     const discPersona = [8, 9, 10, 11].map(i => extractNumber(personRow[i]));
+    
+    // Datos VELNA Persona (Cols 12-16)
     const velnaPersona = [12, 13, 14, 15, 16].map(i => extractNumber(personRow[i]));
+    
+    // Datos Competencias Persona (Cols 24-30)
     const compPersona = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(personRow[i]));
 
-    const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
-      i => String(headerRow[i] || `Comp ${i - 23}`)
-    );
-
+    // Porcentajes de Match del Reporte (Cols 20 y 21)
     const discMatch = extractNumber(personRow[20]);
     const velnaMatch = extractNumber(personRow[21]);
 
     profiles.push({
       nombrePersona: String(nombrePersona),
       discPersona,
-      discIdeal: fixedDiscIdeal, // ✅ Usamos el ideal fijo extraído arriba
+      discIdeal: fixedDiscIdeal,   // Usamos el ideal extraído de la Fila 2
       velnaPersona,
-      velnaIdeal: fixedVelnaIdeal, // ✅ Usamos el ideal fijo extraído arriba
+      velnaIdeal: fixedVelnaIdeal, // Usamos el ideal extraído de la Fila 2
       compLabels,
       compPersona,
-      compIdeal: fixedCompIdeal, // ✅ Usamos el ideal fijo extraído arriba
+      compIdeal: fixedCompIdeal,   // Usamos el ideal extraído de la Fila 2
       discMatch,
       velnaMatch,
     });
   });
 
   if (profiles.length === 0) {
-    throw new Error('No se encontraron perfiles válidos a partir de la fila 3');
+    throw new Error('No se encontraron perfiles de personas válidos a partir de la fila 3.');
   }
 
   return profiles;
 }
 
+// Calculadora fallback para competencias (ya que esas no traen match en CSV)
 export function calculateMatch(persona: number[], ideal: number[]): number {
   if (!persona.length || !ideal.length) return 0;
 
