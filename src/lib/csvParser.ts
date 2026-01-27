@@ -41,11 +41,16 @@ export function parseFile(data: ArrayBuffer | string): ProfileData[] {
   }
 
   const headerRow = rows[0];
-  const idealRow = rows[1]; // El perfil ideal está en la fila 1 (siempre fijo)
+  const idealRow = rows[1]; // ✅ El perfil ideal está FIJO en la fila 1 (índice 1)
+
+  // --- EXTRACCIÓN DE DATOS IDEALES (FIJOS) ---
+  // Estos valores son constantes para todos los empleados en este archivo
+  const fixedDiscIdeal = [31, 32, 33, 34].map(i => extractNumber(idealRow[i]));
+  const fixedVelnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(idealRow[i]));
+  const fixedCompIdeal = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(idealRow[i]));
 
   // Las personas empiezan desde la fila 2 hacia abajo
   const peopleRows = rows.slice(2);
-
   const profiles: ProfileData[] = [];
 
   peopleRows.forEach((personRow) => {
@@ -53,22 +58,13 @@ export function parseFile(data: ArrayBuffer | string): ProfileData[] {
     const nombrePersona = personRow[1];
     if (!nombrePersona) return; 
 
+    // Datos Específicos de la Persona
     const discPersona = [8, 9, 10, 11].map(i => extractNumber(personRow[i]));
-    const discIdeal = [31, 32, 33, 34].map(i => extractNumber(personRow[i])); // ¿El ideal varía por fila? Asumimos que sí según tu lógica original
-
     const velnaPersona = [12, 13, 14, 15, 16].map(i => extractNumber(personRow[i]));
-    const velnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(personRow[i]));
+    const compPersona = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(personRow[i]));
 
     const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
       i => String(headerRow[i] || `Comp ${i - 23}`)
-    );
-
-    const compIdeal = [24, 25, 26, 27, 28, 29, 30].map(
-      i => extractNumber(idealRow[i])
-    );
-
-    const compPersona = [24, 25, 26, 27, 28, 29, 30].map(
-      i => extractNumber(personRow[i])
     );
 
     const discMatch = extractNumber(personRow[20]);
@@ -77,12 +73,12 @@ export function parseFile(data: ArrayBuffer | string): ProfileData[] {
     profiles.push({
       nombrePersona: String(nombrePersona),
       discPersona,
-      discIdeal,
+      discIdeal: fixedDiscIdeal, // ✅ Usamos el ideal fijo extraído arriba
       velnaPersona,
-      velnaIdeal,
+      velnaIdeal: fixedVelnaIdeal, // ✅ Usamos el ideal fijo extraído arriba
       compLabels,
       compPersona,
-      compIdeal,
+      compIdeal: fixedCompIdeal, // ✅ Usamos el ideal fijo extraído arriba
       discMatch,
       velnaMatch,
     });
