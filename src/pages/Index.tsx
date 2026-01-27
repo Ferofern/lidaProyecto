@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button'; // Asumiendo que tienes este componente, si no usa HTML button normal
+import { Button } from '@/components/ui/button';
 
 const velnaLabels = ['Verbal', 'Espacial', 'Lógico', 'Numérico', 'Abstracto'];
 const discTableLabels = ['D - Dominante', 'I - Influyente', 'S - Sólido', 'C - Cumplido'];
@@ -32,16 +32,15 @@ const defaultProfile: ProfileData = {
 type RoleType = 'Jefe' | 'Gerente';
 
 export default function Index() {
-  // ✅ Estado ahora maneja un array de perfiles
   const [profiles, setProfiles] = useState<ProfileData[]>([defaultProfile]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [role, setRole] = useState<RoleType>('Jefe'); // ✅ Nuevo switch de rol
+  const [role, setRole] = useState<RoleType>('Jefe');
   
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isFileLoaded, setIsFileLoaded] = useState(false);
 
-  // Obtener el perfil actual basado en el índice
+  // Perfil actual
   const currentData = profiles[currentIndex];
 
   const processFile = (file: File) => {
@@ -56,7 +55,7 @@ export default function Index() {
         
         if (parsedProfiles.length > 0) {
           setProfiles(parsedProfiles);
-          setCurrentIndex(0); // Resetear al primero
+          setCurrentIndex(0);
           setIsFileLoaded(true);
           setError('');
           setFileName(file.name);
@@ -77,7 +76,6 @@ export default function Index() {
     processFile(file);
   };
 
-  // ✅ Funciones de navegación
   const nextProfile = () => {
     if (currentIndex < profiles.length - 1) setCurrentIndex(prev => prev + 1);
   };
@@ -86,7 +84,6 @@ export default function Index() {
     if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
   };
 
-  // ✅ Actualizadores de estado (ahora modifican el array)
   const updateCurrentProfile = (updater: (profile: ProfileData) => ProfileData) => {
     setProfiles(prev => {
       const newProfiles = [...prev];
@@ -102,7 +99,7 @@ export default function Index() {
   const handleDiscChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
     setProfiles(prevProfiles => {
       const newProfiles = [...prevProfiles];
-      const current = { ...newProfiles[currentIndex] }; // Copia del perfil actual
+      const current = { ...newProfiles[currentIndex] };
       const v = isNaN(value) ? 0 : Math.max(0, value);
 
       if (type === 'persona') {
@@ -118,7 +115,7 @@ export default function Index() {
       newProfiles[currentIndex] = current;
       return newProfiles;
     });
-  }, [currentIndex]); // Dependencia clave: currentIndex
+  }, [currentIndex]);
 
   const handleVelnaChange = useCallback((index: number, type: 'persona' | 'ideal', value: number) => {
     setProfiles(prevProfiles => {
@@ -145,19 +142,21 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="gradient-primary rounded-xl p-2">
                 <BarChart3 className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Matrix Profile Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Análisis {role} - DISC, VELNA y Competencias</p>
+                <p className="text-sm text-muted-foreground">
+                  Análisis <span className="font-semibold text-primary">{role}</span>
+                </p>
               </div>
             </div>
 
-            {/* ✅ SWITCH DE ROL (Jefe / Gerente) */}
-            <div className="flex bg-secondary/30 p-1 rounded-lg">
+            {/* Switch de Rol */}
+            <div className="flex bg-secondary/30 p-1 rounded-lg self-start md:self-auto">
               <button
                 onClick={() => setRole('Jefe')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -201,10 +200,10 @@ export default function Index() {
           )}
         </section>
 
-        {/* ✅ CINTA DE NAVEGACIÓN DE EMPLEADOS */}
         {isFileLoaded && (
           <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4 bg-card border border-border p-4 rounded-xl shadow-sm animate-slide-up">
             
+            {/* Cinta de Navegación */}
             <div className="flex items-center gap-4 w-full md:w-auto justify-center">
               <Button 
                 variant="outline" 
@@ -217,15 +216,15 @@ export default function Index() {
               </Button>
 
               <div className="flex flex-col items-center min-w-[200px]">
-                <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
                   Empleado {currentIndex + 1} de {profiles.length}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-secondary/20 px-3 py-1 rounded-md">
                   <Users className="h-4 w-4 text-primary" />
                   <Input
                     value={currentData.nombrePersona}
                     onChange={e => handleNameChange(e.target.value)}
-                    className="h-8 w-48 bg-transparent border-none text-center font-bold text-lg focus-visible:ring-0 px-0"
+                    className="h-6 w-48 bg-transparent border-none text-center font-bold text-base focus-visible:ring-0 px-0 shadow-none"
                   />
                 </div>
               </div>
@@ -241,15 +240,16 @@ export default function Index() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-secondary/10 border border-secondary/20">
+            {/* Leyenda */}
+            <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-secondary/10 border border-secondary/20 text-xs md:text-sm">
               <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-ideal))]" />
-                <span className="text-sm font-medium text-muted-foreground">Perfil Ideal</span>
+                <span className="h-3 w-3 rounded-full bg-[hsl(var(--chart-ideal))] border border-white/20 shadow-sm" />
+                <span className="font-medium text-muted-foreground">Perfil Ideal</span>
               </div>
               <div className="h-4 w-px bg-border"></div>
               <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm bg-[hsl(var(--chart-person))]" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="h-3 w-3 rounded-full bg-[hsl(var(--chart-person))] border border-white/20 shadow-sm" />
+                <span className="font-medium text-foreground truncate max-w-[150px]">
                   {currentData.nombrePersona}
                 </span>
               </div>
@@ -267,8 +267,7 @@ export default function Index() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
-                  {/* Etiqueta opcional para saber qué rol estamos viendo */}
-                  <span className="text-[10px] text-primary font-bold uppercase">{role}</span>
+                  <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{role}</span>
                 </div>
               </div>
               <DISCRadarChart
@@ -356,7 +355,7 @@ export default function Index() {
           <div className="text-center py-16 text-muted-foreground animate-slide-up">
             <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg">Carga un archivo Excel (.xlsx) o CSV.</p>
-            <p className="text-sm mt-2">El sistema procesará automáticamente a todos los empleados (Jefes o Gerentes).</p>
+            <p className="text-sm mt-2">El sistema procesará automáticamente a todos los empleados.</p>
           </div>
         )}
       </main>
