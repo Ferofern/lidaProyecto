@@ -32,62 +32,50 @@ export function parseFile(data: ArrayBuffer | string): ProfileData[] {
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // Leemos todo como matriz
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
 
-  // Validamos que existan al menos 3 filas (0, 1, 2)
   if (rows.length < 3) {
     throw new Error('El archivo debe tener al menos 3 filas (Encabezados, Ideal, Primer Empleado)');
   }
 
-  // --- REFERENCIAS DE FILAS (POR ÍNDICE) ---
-  const headerRow = rows[0];      // Índice 0: Encabezados
-  const compIdealRow = rows[1];   // Índice 1: Contiene el Ideal de Competencias
-  const discVelnaIdealSource = rows[2]; // Índice 2: Contiene los Ideales DISC y VELNA
+  const headerRow = rows[0];      
+  const compIdealRow = rows[1];   
+  const discVelnaIdealSource = rows[2]; 
 
-  // --- EXTRACCIÓN DE PERFILES IDEALES (FIJOS) ---
-  
-  // 1. Ideal Competencias: Viene de la Fila 1 (Índice 1), columnas 24-30
   const fixedCompIdeal = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(compIdealRow[i]));
-
-  // 2. Ideal DISC: Viene de la Fila 2 (Índice 2), columnas 31-34
   const fixedDiscIdeal = [31, 32, 33, 34].map(i => extractNumber(discVelnaIdealSource[i]));
-
-  // 3. Ideal VELNA: Viene de la Fila 2 (Índice 2), columnas 36-40
   const fixedVelnaIdeal = [36, 37, 38, 39, 40].map(i => extractNumber(discVelnaIdealSource[i]));
 
-  // Etiquetas (Headers)
   const compLabels = [24, 25, 26, 27, 28, 29, 30].map(
     i => String(headerRow[i] || `Comp ${i - 23}`)
   );
 
-  // --- PROCESAMIENTO DE EMPLEADOS ---
-  // Iteramos desde la fila 2 (Índice 2) hacia abajo
   const peopleRows = rows.slice(2);
   const profiles: ProfileData[] = [];
 
   peopleRows.forEach((personRow) => {
     const nombrePersona = personRow[1];
-    if (!nombrePersona) return; // Saltar si no hay nombre
+    if (!nombrePersona) return; 
 
-    // Datos Persona
     const discPersona = [8, 9, 10, 11].map(i => extractNumber(personRow[i]));
     const velnaPersona = [12, 13, 14, 15, 16].map(i => extractNumber(personRow[i]));
     const compPersona = [24, 25, 26, 27, 28, 29, 30].map(i => extractNumber(personRow[i]));
 
-    // Porcentajes Match
-    const discMatch = extractNumber(personRow[20]);
-    const velnaMatch = extractNumber(personRow[21]);
+    const rawDiscMatch = extractNumber(personRow[20]);
+    const rawVelnaMatch = extractNumber(personRow[21]);
+
+    const discMatch = (rawDiscMatch * 100) / 33;
+    const velnaMatch = (rawVelnaMatch * 100) / 33;
 
     profiles.push({
       nombrePersona: String(nombrePersona),
       discPersona,
-      discIdeal: fixedDiscIdeal,   // Usamos el extraído de la Fila 2
+      discIdeal: fixedDiscIdeal,   
       velnaPersona,
-      velnaIdeal: fixedVelnaIdeal, // Usamos el extraído de la Fila 2
+      velnaIdeal: fixedVelnaIdeal, 
       compLabels,
       compPersona,
-      compIdeal: fixedCompIdeal,   // Usamos el extraído de la Fila 1
+      compIdeal: fixedCompIdeal,   
       discMatch,
       velnaMatch,
     });
