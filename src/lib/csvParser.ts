@@ -64,7 +64,7 @@ export function parseFile(data: ArrayBuffer | string): ProfileData[] {
     const rawDiscMatch = extractNumber(personRow[20]);
     const rawVelnaMatch = extractNumber(personRow[21]);
 
-    const discMatch = (rawDiscMatch * 100) / 33;
+    const discMatch = (rawDiscMatch * 100) / 34 ;
     const velnaMatch = (rawVelnaMatch * 100) / 33;
 
     profiles.push({
