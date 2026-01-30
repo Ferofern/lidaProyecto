@@ -266,7 +266,7 @@ export default function Index() {
                   <Target className="h-5 w-5" style={{ color: 'hsl(0, 95%, 45%)' }} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-muted-foreground">Perfil de Comportamiento</span>
+                  <span className="text-sm font-medium text-muted-foreground">Perfil de Conducta</span>
                   <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{role}</span>
                 </div>
               </div>
